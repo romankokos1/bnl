@@ -39,9 +39,10 @@ def kompakt(r: dict, season: int) -> list:
 
 
 def je_brankar(rows: list) -> bool:
-    """Brankář: průměrný čas na ledě v zápasech je přes 40 minut (bruslař se tam nedostane)."""
-    t = sorted(r[13] for r in rows if r[13] and r[13] > 0)
-    return bool(t) and t[len(t) // 2] > 2400
+    """Brankář: hokej.cz mu ve sloupci „góly“ vede odehrané minuty (kolem 60), bruslař nemá 10+ gólů za zápas."""
+    if not rows:
+        return False
+    return sum(1 for r in rows if r[8] >= 10) / len(rows) > 0.3
 
 
 def kod_klubu(hraci: dict) -> str | None:
