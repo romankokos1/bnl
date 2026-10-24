@@ -1,0 +1,35 @@
+name: Import extraligy
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/liga_raw/liga_*.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: liga-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Zpracovat stažené soubory
+        run: python scripts/liga_tymy.py
+      - name: Smazat zpracované vstupy (šetří místo v repu)
+        run: rm -f scripts/liga_raw/liga_*.json
+      - name: Uložit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A scripts docs
+          git diff --cached --quiet || git commit -m "Import extraligy"
+          git pull --rebase
+          git push
