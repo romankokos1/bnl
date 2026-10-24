@@ -38,6 +38,12 @@ def kompakt(r: dict, season: int) -> list:
             r.get("toi", 0), season]
 
 
+def je_brankar(rows: list) -> bool:
+    """Brankář: průměrný čas na ledě v zápasech je přes 40 minut (bruslař se tam nedostane)."""
+    t = sorted(r[13] for r in rows if r[13] and r[13] > 0)
+    return bool(t) and t[len(t) // 2] > 2400
+
+
 def kod_klubu(hraci: dict) -> str | None:
     """Kód klubu = tým, který se nejčastěji vyskytuje v posledních zápasech hráčů souboru."""
     c = Counter()
@@ -60,7 +66,7 @@ def zpracuj(raw_file: Path) -> dict | None:
             for r in v.get("radky", []):
                 if comp_wanted(r.get("comp", "")):
                     rows.append(kompakt(r, int(s)))
-        if not rows:
+        if not rows or je_brankar(rows):
             continue  # brankáři a hráči bez extraligových zápasů
         name = e.get("jmeno") or path
         if name in hraci:
@@ -81,6 +87,8 @@ def zpracuj(raw_file: Path) -> dict | None:
             stary = {}
     # sloučení: starší sezóny, které nový soubor neobsahuje, zůstanou
     for name, rows in stary.get("hraci", {}).items():
+        if je_brankar(rows):
+            continue
         sid = stary.get("idy", {}).get(name)
         nove = next((n for n, i in idy.items() if i == sid), None)
         if nove is None:
@@ -112,10 +120,27 @@ def index() -> None:
     print(f"index.json: {len(kluby)} klubů")
 
 
+def vycisti_stare() -> None:
+    """Odstraní z už uložených klubů brankáře (bez nového stahování)."""
+    for f in sorted(OUT_DIR.glob("*.json")):
+        if f.name == "index.json":
+            continue
+        d = json.loads(f.read_text(encoding="utf-8"))
+        smazat = [n for n, r in d["hraci"].items() if je_brankar(r)]
+        for n in smazat:
+            d["hraci"].pop(n, None)
+            d.get("idy", {}).pop(n, None)
+        if smazat:
+            f.write_text(json.dumps(d, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+            print(f"  {f.name}: odstraněno brankářů {len(smazat)} ({', '.join(smazat)})")
+
+
 def main() -> None:
     soubory = [Path(a) for a in sys.argv[1:]] or sorted(RAW_DIR.glob("liga_*.json"))
     if not soubory:
-        print("Žádné vstupní soubory (scripts/liga_raw/liga_*.json).")
+        print("Žádné nové vstupní soubory, jen čistím uložená data.")
+        vycisti_stare()
+        index()
         return
     for f in soubory:
         zpracuj(f)
