@@ -68,8 +68,15 @@ def sloucit(nove: dict, stare: dict, idy: dict, stare_idy: dict, sezony: dict) -
             nove[shoda] = sorted(nove[shoda] + drzet, key=lambda x: x[0])
 
 
-def zpracuj(raw_file: Path) -> dict | None:
+def zpracuj_soubor(raw_file: Path) -> None:
+    """Jeden soubor = jeden klub (liga-stahovatko.js) nebo celá liga (liga-aktualizace.js, klíč _vse)."""
     raw = json.loads(raw_file.read_text(encoding="utf-8"))
+    casti = raw["_vse"] if isinstance(raw.get("_vse"), list) else [raw]
+    for i, cast in enumerate(casti, 1):
+        zpracuj(cast, raw_file.name if len(casti) == 1 else f"{raw_file.name}#{i}")
+
+
+def zpracuj(raw: dict, popis: str) -> dict | None:
     klub = raw.pop("_klub", {}) or {}
     raw.pop("_zapasy", None)
     hraci, brankari, idy, sezony_hrace = {}, {}, {}, {}
@@ -90,7 +97,7 @@ def zpracuj(raw_file: Path) -> dict | None:
         idy[name] = path
         sezony_hrace[name] = sezony
     if not hraci:
-        print(f"  {raw_file.name}: žádní bruslaři, přeskočeno")
+        print(f"  {popis}: žádní bruslaři, přeskočeno")
         return None
     kod = kod_klubu(hraci)
     out_file = OUT_DIR / f"{kod}.json"
@@ -112,7 +119,7 @@ def zpracuj(raw_file: Path) -> dict | None:
            "hraci": hraci, "brankari": brankari, "idy": idy}
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out_file.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"  {raw_file.name} → {kod}: {len(hraci)} bruslařů, {len(brankari)} brankářů, "
+    print(f"  {popis} → {kod}: {len(hraci)} bruslařů, {len(brankari)} brankářů, "
           f"{sum(len(r) for r in hraci.values())} řádků")
     return out
 
@@ -152,7 +159,7 @@ def main() -> None:
         index()
         return
     for f in soubory:
-        zpracuj(f)
+        zpracuj_soubor(f)
     index()
 
 
