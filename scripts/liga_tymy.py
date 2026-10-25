@@ -4,7 +4,7 @@
 Použití:  python scripts/liga_tymy.py [soubor.json ...]
 Bez parametrů zpracuje všechny scripts/liga_raw/liga_*.json.
 
-Pro každý klub vznikne docs/liga/<KOD>.json (kompaktní řádky zápasů hráčů) a obnoví se
+Pro každý klub vznikne docs/liga/<KOD>.json (kompaktní řádky zápasů bruslařů a zvlášť brankářů) a obnoví se
 docs/liga/index.json (seznam klubů). Zápasy se berou jen z extraligy včetně play off
 (stejný filtr jako u Motoru). Při opakovaném importu se sezóny, které soubor obsahuje,
 nahradí novými a starší zůstanou (rychlý režim stahovátka tedy nic nesmaže).
@@ -55,11 +55,24 @@ def kod_klubu(hraci: dict) -> str | None:
     return c.most_common(1)[0][0] if c else None
 
 
+def sloucit(nove: dict, stare: dict, idy: dict, stare_idy: dict, sezony: dict) -> None:
+    """Přidá do `nove` hráče ze `stare`: neznámé celé, známé (stejné id) jen o sezóny, které nový soubor neobsahuje."""
+    for name, rows in stare.items():
+        sid = stare_idy.get(name)
+        shoda = next((n for n in nove if sid and idy.get(n) == sid), None)
+        if shoda is None:
+            nove[name] = rows
+            idy[name] = sid
+        else:
+            drzet = [r for r in rows if r[14] not in sezony.get(shoda, set())]
+            nove[shoda] = sorted(nove[shoda] + drzet, key=lambda x: x[0])
+
+
 def zpracuj(raw_file: Path) -> dict | None:
     raw = json.loads(raw_file.read_text(encoding="utf-8"))
     klub = raw.pop("_klub", {}) or {}
     raw.pop("_zapasy", None)
-    hraci, idy, sezony_hrace = {}, {}, {}
+    hraci, brankari, idy, sezony_hrace = {}, {}, {}, {}
     for path, e in raw.items():
         rows, sezony = [], set()
         for s, v in e.get("sezony", {}).items():
@@ -67,16 +80,17 @@ def zpracuj(raw_file: Path) -> dict | None:
             for r in v.get("radky", []):
                 if comp_wanted(r.get("comp", "")):
                     rows.append(kompakt(r, int(s)))
-        if not rows or je_brankar(rows):
-            continue  # brankáři a hráči bez extraligových zápasů
+        if not rows:
+            continue  # hráči bez extraligových zápasů
         name = e.get("jmeno") or path
-        if name in hraci:
+        cil = brankari if je_brankar(rows) else hraci
+        if name in hraci or name in brankari:
             name = f"{name} ({path.rsplit('/', 1)[-1]})"
-        hraci[name] = sorted(rows, key=lambda x: x[0])
+        cil[name] = sorted(rows, key=lambda x: x[0])
         idy[name] = path
         sezony_hrace[name] = sezony
     if not hraci:
-        print(f"  {raw_file.name}: žádné extraligové zápasy, přeskočeno")
+        print(f"  {raw_file.name}: žádní bruslaři, přeskočeno")
         return None
     kod = kod_klubu(hraci)
     out_file = OUT_DIR / f"{kod}.json"
@@ -86,25 +100,20 @@ def zpracuj(raw_file: Path) -> dict | None:
             stary = json.loads(out_file.read_text(encoding="utf-8"))
         except Exception:
             stary = {}
+    sid_old = stary.get("idy", {})
     # sloučení: starší sezóny, které nový soubor neobsahuje, zůstanou
-    for name, rows in stary.get("hraci", {}).items():
-        if je_brankar(rows):
-            continue
-        sid = stary.get("idy", {}).get(name)
-        nove = next((n for n, i in idy.items() if i == sid), None)
-        if nove is None:
-            hraci[name] = rows
-            idy[name] = sid
-        else:
-            drzet = [r for r in rows if r[14] not in sezony_hrace[nove]]
-            hraci[nove] = sorted(hraci[nove] + drzet, key=lambda x: x[0])
+    sloucit(hraci, {n: r for n, r in stary.get("hraci", {}).items() if not je_brankar(r)}, idy, sid_old, sezony_hrace)
+    star_br = dict(stary.get("brankari", {}))
+    star_br.update({n: r for n, r in stary.get("hraci", {}).items() if je_brankar(r)})  # dříve uložení brankáři mezi bruslaři
+    sloucit(brankari, star_br, idy, sid_old, sezony_hrace)
     out = {"kod": kod, "nazev": klub.get("nazev") or stary.get("nazev") or kod,
            "slug": klub.get("slug") or stary.get("slug"),
            "vygenerovano": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-           "hraci": hraci, "idy": idy}
+           "hraci": hraci, "brankari": brankari, "idy": idy}
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out_file.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"  {raw_file.name} → {kod}: {len(hraci)} hráčů, {sum(len(r) for r in hraci.values())} řádků")
+    print(f"  {raw_file.name} → {kod}: {len(hraci)} bruslařů, {len(brankari)} brankářů, "
+          f"{sum(len(r) for r in hraci.values())} řádků")
     return out
 
 
@@ -114,7 +123,7 @@ def index() -> None:
         if f.name == "index.json":
             continue
         d = json.loads(f.read_text(encoding="utf-8"))
-        kluby.append({"kod": d["kod"], "nazev": d["nazev"], "hracu": len(d["hraci"]),
+        kluby.append({"kod": d["kod"], "nazev": d["nazev"], "hracu": len(d["hraci"]), "brankaru": len(d.get("brankari", {})),
                       "radku": sum(len(r) for r in d["hraci"].values()),
                       "vygenerovano": d["vygenerovano"]})
     (OUT_DIR / "index.json").write_text(json.dumps(kluby, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -122,18 +131,17 @@ def index() -> None:
 
 
 def vycisti_stare() -> None:
-    """Odstraní z už uložených klubů brankáře (bez nového stahování)."""
+    """Přesune z uložených klubů brankáře z bruslařů do samostatné části (bez nového stahování)."""
     for f in sorted(OUT_DIR.glob("*.json")):
         if f.name == "index.json":
             continue
         d = json.loads(f.read_text(encoding="utf-8"))
-        smazat = [n for n, r in d["hraci"].items() if je_brankar(r)]
-        for n in smazat:
-            d["hraci"].pop(n, None)
-            d.get("idy", {}).pop(n, None)
-        if smazat:
+        presun = [n for n, r in d["hraci"].items() if je_brankar(r)]
+        for n in presun:
+            d.setdefault("brankari", {})[n] = d["hraci"].pop(n)
+        if presun:
             f.write_text(json.dumps(d, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-            print(f"  {f.name}: odstraněno brankářů {len(smazat)} ({', '.join(smazat)})")
+            print(f"  {f.name}: přesunuto brankářů {len(presun)} ({', '.join(presun)})")
 
 
 def main() -> None:
