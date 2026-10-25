@@ -138,6 +138,20 @@
   .badge { display: inline-block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; background: var(--red); color: #fff; border-radius: 999px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
 
 
+  /* milníky */
+  .mil-next { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .mil-next > div { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
+  .mil-next b { display: block; font-size: 1.15rem; line-height: 1.15; }
+  .mil-next span { font-size: 0.7rem; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .mil-next i { font-style: normal; display: block; font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
+  ul.mil { list-style: none; margin: 0; padding: 0; }
+  ul.mil li { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  ul.mil li .ic { flex: none; width: 1.4em; text-align: center; }
+  ul.mil li .t { font-weight: 700; white-space: nowrap; }
+  ul.mil li .w { color: var(--muted); font-size: 0.8rem; margin-left: auto; text-align: right; }
+  .mil h3 { font-size: 0.72rem; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 16px 0 4px; }
+  .solo .mil-team { display: none; }
+  @media (max-width: 640px) { .mil-next { grid-template-columns: 1fr; } ul.mil li { flex-wrap: wrap; } ul.mil li .w { margin-left: 0; text-align: left; flex-basis: 100%; padding-left: 2.4em; } }
   .split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0 4px; }
   .split > div { background: var(--bg); border-radius: 10px; padding: 9px 12px; font-size: 0.82rem; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
   .split b { font-size: 0.7rem; text-transform: uppercase; color: var(--muted); font-weight: 600; width: 100%; }
@@ -252,6 +266,8 @@
     <p id="note" class="small warn"></p>
     <p class="small muted">Řadit jde klepnutím na hlavičku sloupce. Tým hráče se odvozuje z po sobě jdoucích zápasů v sezóně.</p>
   </div>
+
+  <div class="card mil" id="mil" style="display:none"></div>
 
   <details class="card" id="rekordy" style="display:none"></details>
 
@@ -483,7 +499,7 @@ function splitHtml(rows){
 }
 function render(){
   setView();
-  if(mode==='H'){try{heatHtml()}catch(e){console.error(e)}$('rekordy').style.display='none';return}
+  if(mode==='H'){try{heatHtml()}catch(e){console.error(e)}$('rekordy').style.display='none';$('mil').style.display='none';return}
   if(pick==='tiles')chipsHtml();
   var out=$('out'),note=[],names=Object.keys(A()),groups={},first,all=null,tiles='';
   if(!names.length){out.innerHTML='<p class="muted">Zatím žádná data.</p>';$('tiles').innerHTML='';return}
@@ -522,6 +538,7 @@ function render(){
   $('note').textContent=note.join(' ');
   try{rekordyHtml()}catch(e){console.error(e)}
   if($('rekordy').innerHTML)$('rekordy').style.display='';
+  try{milniky()}catch(e){console.error(e)}
   if(mode==='P'){try{pcardHtml($('player').value,prow)}catch(e){console.error(e)}}
 }
 function kontrolaHtml(){return;
@@ -540,6 +557,86 @@ function dlabel(iso){
   if(!iso)return '';var m=iso.match(/^(\d{4})-(\d\d)-(\d\d)$/);if(!m)return iso;
   var d=new Date(+m[1],+m[2]-1,+m[3]),dny=['Ne','Po','Út','St','Čt','Pá','So'];
   return dny[d.getDay()]+' '+(+m[3])+'. '+(+m[2])+'.';
+}
+
+/* ====== milníky ====== */
+function allRowsFor(n){return INFR(n)}
+var MTYPE={z:{ic:'🏒',one:'zápas',lbl:'zápas'},g:{ic:'🥅',one:'gól',lbl:'gól'},b:{ic:'⭐',one:'bod',lbl:'bod'}};
+function milGrid(k,max){var out=[],v;
+  if(k==='z'){for(v=100;v<=max;v+=100)out.push(v)}
+  else if(k==='g'){[1,25,50].forEach(function(x){if(x<=max)out.push(x)});for(v=100;v<=max;v+=50)out.push(v)}
+  else{[1,50].forEach(function(x){if(x<=max)out.push(x)});for(v=100;v<=max;v+=100)out.push(v)}
+  return out}
+function milNext(k,cur){var v=cur+1;
+  if(k==='z')return Math.ceil(v/100)*100;
+  if(k==='g'){if(v<=1)return 1;if(v<=25)return 25;if(v<=50)return 50;return Math.ceil(v/50)*50}
+  if(v<=1)return 1;if(v<=50)return 50;if(v<=100)return 100;return Math.ceil(v/100)*100}
+function milCalc(n){
+  var comp=$('comp').value,rows=allRowsFor(n).filter(function(r){return !comp||r.comp===comp});
+  rows.sort(function(x,y){return x.dt<y.dt?-1:x.dt>y.dt?1:0});
+  var cum={z:0,g:0,b:0},T={z:[],g:[],b:[]},items=[],i,k,pos={z:0,g:0,b:0};
+  var tot={z:rows.length,g:0,b:0};rows.forEach(function(r){tot.g+=r.g;tot.b+=r.p});
+  ['z','g','b'].forEach(function(kk){T[kk]=milGrid(kk,tot[kk])});
+  rows.forEach(function(r){
+    var add={z:1,g:r.g,b:r.p};
+    ['z','g','b'].forEach(function(kk){
+      cum[kk]+=add[kk];
+      while(pos[kk]<T[kk].length&&cum[kk]>=T[kk][pos[kk]]){items.push({k:kk,n:T[kk][pos[kk]],r:r,add:add[kk],cum:cum[kk]});pos[kk]++}
+    });
+  });
+  var next={};['z','g','b'].forEach(function(kk){var t=milNext(kk,tot[kk]);next[kk]={t:t,left:t-tot[kk]}});
+  return {items:items,tot:tot,next:next};
+}
+function fdate(d){var m=d.match(/^(\d{4})-(\d\d)-(\d\d)/);return m?(+m[3])+'. '+(+m[2])+'. '+m[1]:d}
+function milWhere(r){
+  var o=r.team?opp(r):null,sc=(r.sa!=null?(r.team===r.b?r.sb+':'+r.sa:r.sa+':'+r.sb):'');
+  if(!o)return r.a+' – '+r.b+(r.sa!=null?' '+r.sa+':'+r.sb:'');
+  return 'proti '+(TEAMS[o]||o)+' ('+(r.team===r.a?'doma':'venku')+(sc?', '+sc:'')+')';
+}
+function milLabel(it){var t=MTYPE[it.k];return it.n+'. '+t.lbl}
+function milHtml(n){
+  var M=milCalc(n),comp=$('comp').value;
+  var h='<h2>Milníky — '+xe(n)+'</h2>';
+  h+='<div class="mil-next">'+['z','g','b'].map(function(k){var x=M.next[k],t=MTYPE[k];
+    return '<div><span>'+t.ic+' Další '+t.one+'</span><b>'+x.t+'.</b><i>'+(x.left<=0?'splněno':'ještě '+x.left+' '+(k==='z'?'zápasů':k==='g'?'gólů':'bodů'))+' · teď '+M.tot[k]+'</i></div>'}).join('')+'</div>';
+  if(!M.items.length)h+='<p class="muted small">Zatím žádný milník (počítá se od 1. gólu a 1. bodu, pak 25./50./100. gól, 50./100. bod a každý 100. zápas).</p>';
+  else h+='<ul class="mil">'+M.items.slice().sort(function(a,b){return a.r.dt<b.r.dt?1:a.r.dt>b.r.dt?-1:0}).map(function(it){
+    var extra=it.k!=='z'&&it.add>1?' <span class="muted">(v zápase +'+it.add+')</span>':'';
+    return '<li><span class="ic">'+MTYPE[it.k].ic+'</span><span class="t">'+milLabel(it)+extra+'</span><span class="w">'+fdate(it.r.dt)+' · '+xe(milWhere(it.r))+'</span></li>'}).join('')+'</ul>';
+  h+='<p class="small muted">Počítá se '+(comp?xe(comp):'extraliga včetně play off')+', od začátku dostupných dat (data z hokej.cz).</p>';
+  return h;
+}
+var MILKEY='',MILTEAM='';
+function milTeamHtml(){
+  var names=Object.keys(A()),key=[names.length,$('comp').value,$('klub')?$('klub').value:'',CUR].join('|');
+  if(key===MILKEY)return MILTEAM;
+  var near=[],year=[];
+  names.forEach(function(n){
+    var M;try{M=milCalc(n)}catch(e){return}
+    ['z','g','b'].forEach(function(k){
+      var x=M.next[k],lim=k==='z'?10:k==='g'?3:5;
+      if(x.left>0&&x.left<=lim&&!(k==='g'&&x.t<25)&&!(k==='b'&&x.t<50))near.push({n:n,k:k,t:x.t,left:x.left,rel:x.left/(k==='z'?100:k==='g'?25:50)});
+    });
+    M.items.forEach(function(it){if(it.r.season===CUR&&!(it.n===1))year.push({n:n,it:it})});
+  });
+  near.sort(function(a,b){return (a.rel-b.rel)||(a.n<b.n?-1:1)});
+  year.sort(function(a,b){return a.it.r.dt<b.it.r.dt?1:-1});
+  var h='<div class="mil-team"><h3>Blíží se milník</h3>';
+  h+=near.length?'<ul class="mil">'+near.slice(0,12).map(function(x){var t=MTYPE[x.k];
+    return '<li><span class="ic">'+t.ic+'</span><span class="t">'+plink(x.n)+'</span><span class="w">'+x.t+'. '+t.lbl+' · ještě '+x.left+'</span></li>'}).join('')+'</ul>':'<p class="small muted">Nikdo není těsně před milníkem.</p>';
+  h+='<h3>Letos splněno ('+seasonLabel(CUR)+')</h3>';
+  h+=year.length?'<ul class="mil">'+year.slice(0,15).map(function(x){var it=x.it;
+    return '<li><span class="ic">'+MTYPE[it.k].ic+'</span><span class="t">'+plink(x.n)+' — '+milLabel(it)+'</span><span class="w">'+fdate(it.r.dt)+' · '+xe(milWhere(it.r))+'</span></li>'}).join('')+'</ul>':'<p class="small muted">Letos zatím nikdo.</p>';
+  h+='</div>';
+  MILKEY=key;MILTEAM=h;return h;
+}
+function milniky(){
+  var el=$('mil'),h='';
+  var n=$('player').value;
+  if(mode==='P'&&n&&A()[n])h+=milHtml(n);
+  h+=milTeamHtml();
+  el.innerHTML=h;el.style.display=h?'':'none';
+  bindLinks(el);
 }
 function openPlayer(n){
   var kk=$('klub').value;if(kk&&KLUB[n]&&KLUB[n]!==kk)$('klub').value=KLUB[n];
