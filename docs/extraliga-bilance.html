@@ -402,17 +402,22 @@ function fill(sel,vals,keep,all){
   sel.innerHTML=h; if(keep!=null&&((keep===''&&all)||vals.indexOf(keep)>-1))sel.value=keep;
 }
 try{var pk=localStorage.getItem('bilancePick');if(pk==='sel'||pk==='tiles')pick=pk}catch(e){}
-function surname(n){return n.split(' ')[0]}
+var LASTFMT={};
+function nameParts(n){var q=n.replace(/ \([A-Z]{2,4}\)$/,'').split(' ');
+  if(LASTFMT[n]&&q.length>1)return {sur:q[q.length-1],first:q.slice(0,-1).join(' ')};
+  return {sur:q[0],first:q.slice(1).join(' ')}}
+function surname(n){return nameParts(n).sur}
+function byName(a,b){var x=nameParts(a).sur,y=nameParts(b).sur;return x<y?-1:x>y?1:(a<b?-1:a>b?1:0)}
 function chipsHtml(){
   var h='',cur;
   if(mode==='P'){
     cur=$('player').value;
     var names=Object.keys(A()).sort(function(a,b){
       var x=CISLA[a],y=CISLA[b];
-      if(x==null&&y==null)return a<b?-1:1;if(x==null)return 1;if(y==null)return -1;
-      return (x-y)||(a<b?-1:1);
+      if(x==null&&y==null)return byName(a,b);if(x==null)return 1;if(y==null)return -1;
+      return (x-y)||byName(a,b);
     });
-    names.forEach(function(n){h+='<button type="button" class="chip'+(n===cur?' on':'')+'" data-v="'+n+'" title="'+n+'"><span class="no">'+(KLUB[n]||'&nbsp;')+'</span><b>'+surname(n)+'</b></button>'});
+    names.forEach(function(n){h+='<button type="button" class="chip'+(n===cur?' on':'')+'" data-v="'+n+'" title="'+n+'"><span class="no">'+(KLUB[n]&&!$('klub').value?KLUB[n]:'&nbsp;')+'</span><b>'+surname(n)+'</b></button>'});
   }else{
     cur=$('opp').value;
     Array.prototype.forEach.call($('opp').options,function(o){var c=o.value;h+='<button type="button" class="chip'+(c===cur?' on':'')+'" style="--tc:'+(TEAMCOL[c]||'#94a3b8')+'" data-v="'+c+'"><span class="no">'+c+'</span><b>'+(TEAMS[c]||c)+'</b></button>'});
@@ -443,7 +448,7 @@ $('pmTiles').onclick=function(){pick='tiles';try{localStorage.setItem('bilancePi
 $('pmSel').onclick=function(){pick='sel';try{localStorage.setItem('bilancePick',pick)}catch(e){}applyPick();render()};
 function seasonLabel(s){return s+'/'+String(+s+1).slice(2)}
 function refresh(sel){
-  var AA=A(),names=Object.keys(AA).sort(),keep=sel||$('player').value;
+  var AA=A(),names=Object.keys(AA).sort(byName),keep=sel||$('player').value;
   fill($('player'),names,keep);
   var seasons={},comps={};
   names.forEach(function(n){AA[n].forEach(function(r){seasons[r.season]=1;comps[r.comp]=1})});
@@ -650,7 +655,7 @@ function milniky(){
 
 /* ====== brankáři ====== */
 var EMBG={},KLUBG={},INFGC={},GS={view:'B',who:'',opp:'',sk:'z',sd:-1};
-function gNames(){var k=$('klub').value;return Object.keys(EMBG).filter(function(n){return !k||KLUBG[n]===k}).sort()}
+function gNames(){var k=$('klub').value;return Object.keys(EMBG).filter(function(n){return !k||KLUBG[n]===k}).sort(byName)}
 function INFG(n){var r=INFGC[n];if(!r){r=EMBG[n].map(function(x){return Object.assign({},x)});inferTeams(r,KLUBG[n]);INFGC[n]=r}return r}
 function gFilt(n){var s=$('season').value,c=$('comp').value;return INFG(n).filter(function(r){return (!s||String(r.season)===s)&&(!c||r.comp===c)&&clubOk(r)&&whereOk(r)})}
 function gAgg(rows){
@@ -919,7 +924,7 @@ function cardModel(n,rows){
 }
 function cardSvg(n,rows,final,all){
   all=all||rows;
-  var M=cardModel(n,rows),parts=n.split(' '),sur=parts[0],first=parts.slice(1).join(' ');
+  var M=cardModel(n,rows),np=nameParts(n),sur=np.sur,first=np.first;
   var no=CISLA[n]!=null?CISLA[n]:'';
   var F='font-family="Segoe UI,Roboto,Helvetica,Arial,sans-serif"';
   var s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 880" width="600" height="880" '+F+'>';
@@ -1069,13 +1074,13 @@ function expand(a){return {dt:a[0],kolo:a[1],comp:a[2],a:a[3],b:a[4],sa:a[5],sb:
 function addPlayer(kod,name,rows,id){
   var key=name;
   if(EMB[key]){if(id&&IDS[key]===id)return;key=name+' ('+kod+')'}
-  EMB[key]=rows;KLUB[key]=kod;IDS[key]=id||null;
+  EMB[key]=rows;KLUB[key]=kod;IDS[key]=id||null;if(id)LASTFMT[key]=true;
 }
 var LOADED={};
 function addGoalie(kod,name,rows,id){
   var key=name;
   if(EMBG[key]){if(id&&IDS['G:'+key]===id)return;key=name+' ('+kod+')'}
-  EMBG[key]=rows;KLUBG[key]=kod;IDS['G:'+key]=id||null;
+  EMBG[key]=rows;KLUBG[key]=kod;IDS['G:'+key]=id||null;LASTFMT[key]=true;
 }
 function getJson(url){return fetch(url,{cache:'no-cache'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null})}
 function ensure(kod){
