@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "scripts/liga_raw/liga_*.json"
+      - "scripts/liga_rucne.json"
 
 permissions:
   contents: write
