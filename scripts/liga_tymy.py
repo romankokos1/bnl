@@ -22,6 +22,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 RAW_DIR = SCRIPT_DIR / "liga_raw"
 OUT_DIR = SCRIPT_DIR.parent / "docs" / "liga"
+RUCNE_FILE = SCRIPT_DIR / "liga_rucne.json"  # ruční určení týmu u nejasných zápasů {"Jméno Příjmení|YYYY-MM-DD": "KÓD"}
 
 COMP_RE = re.compile(r"extralig|^(Generali\s+)?(Česká pojišťovna\s+)?play\s*-?\s*off", re.I)
 COMP_EXCLUDE_RE = re.compile(r"junior|dorost|9\. tříd|U\d\d|\bml\.|\bst\.|baráž", re.I)
@@ -138,7 +139,7 @@ def index() -> None:
 
 
 # ------------------------------------------------------------ kontrola přiřazení zápasů
-def tym_hrace(rows: list, home: str | None, cur: int) -> list:
+def tym_hrace(rows: list, home: str | None, cur: int, name: str = "", rucne: dict | None = None) -> list:
     """Stejná logika jako inferTeams na stránce: tým hráče z po sobě jdoucích zápasů v sezóně,
     pak pravidlo „aktuální sezóna proti vlastnímu klubu“ a odhad podle nejbližšího jasného zápasu.
     Vrací [{r, team, stav}] kde stav je None / "odhad" / "nepřiřazeno"."""
@@ -172,17 +173,27 @@ def tym_hrace(rows: list, home: str | None, cur: int) -> list:
                 cand, run = sx, [x]
         flush()
     for x in items:
-        if x["amb"] and home and x["season"] == cur and home in (x["a"], x["b"]):
+        fix = (rucne or {}).get(f"{name}|{x['r'][0]}")
+        if fix and fix in (x["a"], x["b"]):
+            x["team"], x["amb"] = fix, False
+        elif x["amb"] and home and x["season"] == cur and home in (x["a"], x["b"]):
             x["team"], x["amb"] = home, False
     srt = sorted(items, key=lambda x: x["r"][0])
     for i, x in enumerate(srt):
         if x["team"] or not x["amb"]:
             continue
-        t = next((srt[j]["team"] for j in range(i - 1, -1, -1) if srt[j]["team"]), None)
-        if t not in (x["a"], x["b"]):
-            t = next((srt[j]["team"] for j in range(i + 1, len(srt)) if srt[j]["team"]), None)
-        if t in (x["a"], x["b"]):
+        pred = next((srt[j]["team"] for j in range(i - 1, -1, -1) if srt[j]["team"]), None)
+        nasl = next((srt[j]["team"] for j in range(i + 1, len(srt)) if srt[j]["team"]), None)
+        kand = (x["a"], x["b"])
+        t = pred if pred in kand else nasl
+        if t in kand:
             x["team"], x["amb"], x["odhad"] = t, False, True
+            if pred in kand and nasl in kand and pred != nasl:
+                x["jistota"] = "nízká (hráč mezi těmito týmy přestoupil)"
+            elif pred in kand:
+                x["jistota"] = "dobrá"
+            else:
+                x["jistota"] = "střední (podle následujícího zápasu)"
     for x in items:
         x["stav"] = "nepřiřazeno" if x["amb"] else ("odhad" if x["odhad"] else None)
     return items
@@ -207,26 +218,32 @@ def kontrola_prirazeni() -> None:
                 last = max((r[0] for r in rows), default="")
                 if last > e["last"]:
                     e["last"], e["klub"] = last, d["kod"]
+    rucne = {}
+    if RUCNE_FILE.exists():
+        rucne = {k: v for k, v in json.loads(RUCNE_FILE.read_text(encoding="utf-8")).items() if not k.startswith("_")}
+    (OUT_DIR / "rucne.json").write_text(json.dumps(rucne, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     radky, souhrn = [], {}
     for e in hraci.values():
-        for x in tym_hrace(list(e["rows"].values()), e["klub"], cur):
+        for x in tym_hrace(list(e["rows"].values()), e["klub"], cur, e["name"], rucne):
             if not x["stav"]:
                 continue
             r = x["r"]
             body = r[10] if e["poz"] == "bruslař" else ""
+            tym = x["team"] or f"{r[3]} nebo {r[4]}"
             radky.append([e["klub"], e["name"], e["poz"], r[0], r[14], f"{r[3]} – {r[4]}",
                           f"{r[5]}:{r[6]}" if r[5] is not None else "", x["stav"],
-                          x["team"] or f"{r[3]} nebo {r[4]}", body])
+                          tym, x.get("jistota", "—"), body,
+                          f'"{e["name"]}|{r[0]}": "{tym}",'])
             sm = souhrn.setdefault((e["klub"], e["name"], e["poz"]), [0, 0])
             sm[0 if x["stav"] == "nepřiřazeno" else 1] += 1
-    radky.sort(key=lambda z: (z[7] != "nepřiřazeno", z[0], z[1], z[3]))
+    radky.sort(key=lambda z: (z[7] != "nepřiřazeno", not z[9].startswith("nízká"), z[0], z[1], z[3]))
 
     def csv(hlavicka, data):
         esc = lambda v: '"' + str(v).replace('"', '""') + '"'
         return "\ufeff" + "\n".join(";".join(esc(c) for c in row) for row in [hlavicka] + data) + "\n"
 
     (OUT_DIR / "nejasne.csv").write_text(csv(
-        ["Klub", "Hráč", "Pozice", "Datum", "Sezóna", "Zápas", "Skóre", "Stav", "Tým (odhad) / kandidáti", "Body v zápase"], radky),
+        ["Klub", "Hráč", "Pozice", "Datum", "Sezóna", "Zápas", "Skóre", "Stav", "Tým (odhad) / kandidáti", "Jistota odhadu", "Body v zápase", "Řádek pro scripts/liga_rucne.json"], radky),
         encoding="utf-8")
     sh = sorted(([k[0], k[1], k[2], v[0], v[1], v[0] + v[1]] for k, v in souhrn.items()), key=lambda z: (-z[3], -z[5], z[0], z[1]))
     (OUT_DIR / "nejasne_hraci.csv").write_text(csv(
