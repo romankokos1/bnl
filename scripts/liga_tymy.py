@@ -137,6 +137,107 @@ def index() -> None:
     print(f"index.json: {len(kluby)} klubů")
 
 
+# ------------------------------------------------------------ kontrola přiřazení zápasů
+def tym_hrace(rows: list, home: str | None, cur: int) -> list:
+    """Stejná logika jako inferTeams na stránce: tým hráče z po sobě jdoucích zápasů v sezóně,
+    pak pravidlo „aktuální sezóna proti vlastnímu klubu“ a odhad podle nejbližšího jasného zápasu.
+    Vrací [{r, team, stav}] kde stav je None / "odhad" / "nepřiřazeno"."""
+    items = [{"r": r, "a": r[3], "b": r[4], "season": r[14], "team": None, "amb": False, "odhad": False} for r in rows]
+    by = {}
+    for x in items:
+        by.setdefault(x["season"], []).append(x)
+    for g in by.values():
+        g.sort(key=lambda x: x["r"][0])
+        run, cand = [], None
+
+        def flush():
+            nonlocal run, cand
+            if run:
+                t = cand[0] if cand and len(cand) == 1 else None
+                for x in run:
+                    x["team"], x["amb"] = t, t is None
+            run, cand = [], None
+
+        for x in g:
+            sx = [x["a"], x["b"]]
+            if cand is None:
+                cand, run = sx, [x]
+                continue
+            inter = [c for c in cand if c in sx]
+            if inter:
+                cand = inter
+                run.append(x)
+            else:
+                flush()
+                cand, run = sx, [x]
+        flush()
+    for x in items:
+        if x["amb"] and home and x["season"] == cur and home in (x["a"], x["b"]):
+            x["team"], x["amb"] = home, False
+    srt = sorted(items, key=lambda x: x["r"][0])
+    for i, x in enumerate(srt):
+        if x["team"] or not x["amb"]:
+            continue
+        t = next((srt[j]["team"] for j in range(i - 1, -1, -1) if srt[j]["team"]), None)
+        if t not in (x["a"], x["b"]):
+            t = next((srt[j]["team"] for j in range(i + 1, len(srt)) if srt[j]["team"]), None)
+        if t in (x["a"], x["b"]):
+            x["team"], x["amb"], x["odhad"] = t, False, True
+    for x in items:
+        x["stav"] = "nepřiřazeno" if x["amb"] else ("odhad" if x["odhad"] else None)
+    return items
+
+
+def kontrola_prirazeni() -> None:
+    """Vyrobí docs/liga/nejasne.csv (jeden řádek = jeden nejasný zápas) a nejasne_hraci.csv (souhrn podle hráčů).
+    Hráč, který je v souborech dvou klubů (přestup), se před kontrolou sloučí a patří klubu s posledním zápasem."""
+    hraci = {}
+    cur = 0
+    for f in sorted(OUT_DIR.glob("*.json")):
+        if f.name == "index.json":
+            continue
+        d = json.loads(f.read_text(encoding="utf-8"))
+        for poz, klic in (("bruslař", "hraci"), ("brankář", "brankari")):
+            for name, rows in d.get(klic, {}).items():
+                key = (d.get("idy", {}).get(name) or f"{d['kod']}:{name}", poz)
+                e = hraci.setdefault(key, {"name": name, "poz": poz, "rows": {}, "klub": d["kod"], "last": ""})
+                for r in rows:
+                    e["rows"].setdefault((r[0], r[3], r[4]), r)
+                    cur = max(cur, r[14])
+                last = max((r[0] for r in rows), default="")
+                if last > e["last"]:
+                    e["last"], e["klub"] = last, d["kod"]
+    radky, souhrn = [], {}
+    for e in hraci.values():
+        for x in tym_hrace(list(e["rows"].values()), e["klub"], cur):
+            if not x["stav"]:
+                continue
+            r = x["r"]
+            body = r[10] if e["poz"] == "bruslař" else ""
+            radky.append([e["klub"], e["name"], e["poz"], r[0], r[14], f"{r[3]} – {r[4]}",
+                          f"{r[5]}:{r[6]}" if r[5] is not None else "", x["stav"],
+                          x["team"] or f"{r[3]} nebo {r[4]}", body])
+            sm = souhrn.setdefault((e["klub"], e["name"], e["poz"]), [0, 0])
+            sm[0 if x["stav"] == "nepřiřazeno" else 1] += 1
+    radky.sort(key=lambda z: (z[7] != "nepřiřazeno", z[0], z[1], z[3]))
+
+    def csv(hlavicka, data):
+        esc = lambda v: '"' + str(v).replace('"', '""') + '"'
+        return "\ufeff" + "\n".join(";".join(esc(c) for c in row) for row in [hlavicka] + data) + "\n"
+
+    (OUT_DIR / "nejasne.csv").write_text(csv(
+        ["Klub", "Hráč", "Pozice", "Datum", "Sezóna", "Zápas", "Skóre", "Stav", "Tým (odhad) / kandidáti", "Body v zápase"], radky),
+        encoding="utf-8")
+    sh = sorted(([k[0], k[1], k[2], v[0], v[1], v[0] + v[1]] for k, v in souhrn.items()), key=lambda z: (-z[3], -z[5], z[0], z[1]))
+    (OUT_DIR / "nejasne_hraci.csv").write_text(csv(
+        ["Klub", "Hráč", "Pozice", "Nepřiřazeno", "Odhadem", "Celkem"], sh), encoding="utf-8")
+    n_np = sum(1 for z in radky if z[7] == "nepřiřazeno")
+    print(f"Kontrola přiřazení: {n_np} zápasů nepřiřazeno, {len(radky) - n_np} přiřazeno odhadem, "
+          f"u {len(souhrn)} hráčů z {len(hraci)} (docs/liga/nejasne.csv).")
+    for z in sh[:15]:
+        print(f"   {z[0]:4} {z[1]:28} nepřiřazeno {z[3]}, odhadem {z[4]}")
+
+
 def vycisti_stare() -> None:
     """Přesune z uložených klubů brankáře z bruslařů do samostatné části (bez nového stahování)."""
     for f in sorted(OUT_DIR.glob("*.json")):
@@ -157,10 +258,12 @@ def main() -> None:
         print("Žádné nové vstupní soubory, jen čistím uložená data.")
         vycisti_stare()
         index()
+        kontrola_prirazeni()
         return
     for f in soubory:
         zpracuj_soubor(f)
     index()
+    kontrola_prirazeni()
 
 
 if __name__ == "__main__":
