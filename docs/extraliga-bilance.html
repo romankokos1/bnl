@@ -16,11 +16,11 @@
   table.hm td.hc { animation-delay: calc(min(var(--i), 40) * 18ms); }
 </style>
 <style>
-  /* Vzhled: trenérská křídová tabule. Čárky po pěti místo sloupečků, ruční písmo, drsné hrany. */
+  /* Vzhled: pracovní podklad v duchu trenérské tabule. Bílý podklad, jasné G/A/B. */
   :root {
     --board: #ffffff; --chalk: #1d2740; --muted: #5b6478; --line: rgba(29,39,64,.4); --y: #c76400; --red: #c8262b; --blue: #1f5fa8; --green: #1f7a3a;
     --bg: var(--board); --card: var(--board); --navy: var(--chalk); --border: var(--line); --warn: #b45309; --zebra: transparent; --hm0: rgba(29,39,64,.07); --ontip: #1d2740; --pillon: #1d2740; --field: rgba(29,39,64,.06);
-    --ellipse: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'><path d='M52 3C82 2 98 10 97 21C96 33 70 38 44 37C17 36 3 29 4 17C5 8 28 3 58 4C70 4 80 6 86 9' fill='none' stroke='%23c8262b' stroke-width='2.4' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>"); --uline: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 10' preserveAspectRatio='none'><path d='M2 6C30 2 60 8 100 5C140 2 170 7 198 4' fill='none' stroke='%231d2740' stroke-width='3' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>"); --noise: linear-gradient(#0000, #0000);
+    --gab: rgba(29,39,64,.055); --bar: rgba(199,100,0,.17); --ellipse: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'><path d='M52 3C82 2 98 10 97 21C96 33 70 38 44 37C17 36 3 29 4 17C5 8 28 3 58 4C70 4 80 6 86 9' fill='none' stroke='%23c8262b' stroke-width='2.4' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>"); --uline: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 10' preserveAspectRatio='none'><path d='M2 6C30 2 60 8 100 5C140 2 170 7 198 4' fill='none' stroke='%231d2740' stroke-width='3' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>"); --noise: linear-gradient(#0000, #0000);
     color-scheme: light;
     --f-hand: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
     --f-chalk: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -29,7 +29,7 @@
   :root[data-theme="dark"] {
     --board: #1e2b26; --chalk: #efeee6; --muted: #a3ada6; --line: rgba(239,238,230,.38); --y: #f3d36b; --red: #ef7b6c; --blue: #8fc1f0; --green: #9bd89b;
     --bg: var(--board); --card: var(--board); --navy: var(--chalk); --border: var(--line); --warn: #f3d36b; --zebra: transparent; --hm0: rgba(239,238,230,.07); --ontip: #efeee6; --pillon: #efeee6; --field: rgba(239,238,230,.07);
-    --ellipse: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'><path d='M52 3C82 2 98 10 97 21C96 33 70 38 44 37C17 36 3 29 4 17C5 8 28 3 58 4C70 4 80 6 86 9' fill='none' stroke='%23f3d36b' stroke-width='2.4' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>"); --uline: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 10' preserveAspectRatio='none'><path d='M2 6C30 2 60 8 100 5C140 2 170 7 198 4' fill='none' stroke='%23efeee6' stroke-width='3' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>"); --noise: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .09 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+    --gab: rgba(239,238,230,.07); --bar: rgba(243,211,107,.24); --ellipse: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'><path d='M52 3C82 2 98 10 97 21C96 33 70 38 44 37C17 36 3 29 4 17C5 8 28 3 58 4C70 4 80 6 86 9' fill='none' stroke='%23f3d36b' stroke-width='2.4' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>"); --uline: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 10' preserveAspectRatio='none'><path d='M2 6C30 2 60 8 100 5C140 2 170 7 198 4' fill='none' stroke='%23efeee6' stroke-width='3' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>"); --noise: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .09 0'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
@@ -118,19 +118,16 @@
   th.nos { cursor: default; } th.nos::after { content: none; }
   td.opp b { font: 600 1rem var(--f-hand); letter-spacing: .02em; }
   td.opp .full { color: var(--muted); font-size: .85rem; margin-left: 6px; font-weight: 400; }
-  td.pts { font-weight: 600; color: var(--y); }
-  td.tld { text-align: left; padding-left: 12px; width: 1%; }
-  td.opp .tl { display: none; margin-top: 3px; }
-  .tally { display: block; overflow: visible; }
-  .tally line, .tally ellipse { fill: none; stroke-width: 2.4; stroke-linecap: round; opacity: .93; vector-effect: non-scaling-stroke; }
-  .tally .g { stroke: var(--chalk); } .tally .a { stroke: var(--y); }
+  /* G, A, B: vlastní pásmo, tučně a barevně; nuly utlumené, aby nenulové hodnoty vynikly */
+  th.gab, td.gab { background: var(--gab); }
+  th.gab { font-size: .95rem; font-weight: 700; color: var(--chalk); }
+  th[data-k="g"] { color: var(--blue); } th[data-k="a"] { color: var(--y); }
+  td.gab { font-weight: 700; font-size: 1.05rem; }
+  td[data-k="g"], td.g { color: var(--blue); } td.a { color: var(--y); }
+  td.gab.zero { font-weight: 400; font-size: .95rem; color: var(--muted); opacity: .75; }
+  td.pts { color: var(--chalk); font-size: 1.15rem; }
+  td.pts.zero { font-size: .95rem; }
   tr.tot td { border-top: 2px solid var(--chalk); border-bottom: 0; padding-top: 9px; font-weight: 600; }
-  .form { display: inline-flex; gap: 2px; vertical-align: middle; }
-  .form i { width: 5px; height: 15px; background: var(--line); border-radius: 2px; transform: rotate(var(--r, 0deg)); }
-  .form i.w { background: var(--chalk); } .form i.l { background: var(--red); }
-  .legend-t { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 10px 0 0; color: var(--muted); font-size: .85rem; align-items: center; }
-  .legend-t svg { width: 22px; height: 18px; vertical-align: -3px; margin-right: 6px; }
-  .legend-t line { stroke-width: 2.7; stroke-linecap: round; }
 
   details > summary { cursor: pointer; list-style: none; font: 700 1.15rem var(--f-chalk); }
   details > summary::-webkit-details-marker { display: none; }
@@ -226,8 +223,7 @@
     .hide-m { display: none; }
     td.opp .full { display: none; }
     td.tld, th.tld { display: none; }
-    td.opp .tl { display: block; }
-  }
+    }
 </style>
 </head>
 <body>
@@ -294,7 +290,6 @@
     <button type="button" class="btn sec" id="linkSolo" style="padding:5px 11px;font-size:.78rem;vertical-align:middle" title="Odkaz na samostatnou stránku jen s tímto hráčem" aria-label="Odkaz na samostatnou stránku jen s tímto hráčem">Jen tento hráč</button>
     <div class="tblwrap" id="out"></div>
     <p id="note" class="small warn"></p>
-    <p class="legend-t"><span><svg viewBox="0 0 22 18"><line x1="6" y1="2" x2="6" y2="16" stroke="var(--chalk)"/><line x1="14" y1="2" x2="14" y2="16" stroke="var(--chalk)"/></svg>gól</span><span><svg viewBox="0 0 22 18"><line x1="6" y1="2" x2="6" y2="16" stroke="var(--y)"/><line x1="14" y1="2" x2="14" y2="16" stroke="var(--y)"/></svg>asistence</span><span>pátá čárka škrtá čtyři předchozí</span></p>
     <p class="small muted">Řadit jde klepnutím na hlavičku sloupce. Tým hráče se odvozuje z po sobě jdoucích zápasů v sezóně.</p>
   </div>
 
@@ -507,36 +502,17 @@ function agg(rows){
 }
 function fmtPm(v){return '<span class="'+(v>0?'pos':v<0?'neg':'')+'">'+(v>0?'+'+v:v)+'</span>'}
 function fmtToi(t){if(!t.toiz)return '–';var a=Math.round(t.toi/t.toiz);return Math.floor(a/60)+':'+('0'+a%60).slice(-2)}
-function formHtml(rows){
-  var r=rows.filter(function(x){return won(x)!==null}).slice().sort(function(a,b){return a.dt<b.dt?-1:a.dt>b.dt?1:0}).slice(-10);
-  if(!r.length)return '';
-  return '<span class="form">'+r.map(function(x){var w=won(x);return '<i class="'+(w?'w':'l')+'" title="'+x.dt+' · '+x.a+' – '+x.b+(x.sa!=null?' '+x.sa+':'+x.sb:'')+'"></i>'}).join('')+'</span>';
-}
+function bg(v,max){if(!max||v<=0)return '';var p=Math.max(4,Math.round(100*v/max));return ' style="background:linear-gradient(90deg,var(--bar) '+p+'%,transparent '+p+'%)"'}
 function wlHtml(t){return t.w+'–'+t.l}
-function hash(str){var h=2166136261;for(var i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
-function rnd(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-/* body jako čárky po pěti (jako na pivním tácku): bílá = gól, žlutá = asistence */
-function tally(g,a,key,maxB){
-  var n=g+a,H=30,G=42;
-  if(n<=0)return '<svg class="tally" width="22" height="'+H+'" viewBox="0 0 22 '+H+'"><title>bez bodu</title><ellipse class="g" cx="11" cy="17" rx="7" ry="9"/></svg>';
-  var R=rnd(hash(key+'|'+n)),gr=Math.ceil(n/5),mg=Math.max(1,Math.ceil(maxB/5)),sc=Math.min(1,(window.innerWidth<641?200:190)/(mg*G)),o='';
-  function j(k){return (R()-.5)*k}
-  for(var i=0;i<n;i++){
-    var c=i<g?'g':'a',x0=Math.floor(i/5)*G+6,pos=i%5;
-    if(pos<4){var x=x0+pos*7.5;o+='<line class="'+c+'" x1="'+(x+j(2.4)).toFixed(1)+'" y1="'+(4+R()*3).toFixed(1)+'" x2="'+(x+j(3.2)).toFixed(1)+'" y2="'+(H-4-R()*3).toFixed(1)+'"/>'}
-    else o+='<line class="'+c+'" x1="'+(x0-5+j(2)).toFixed(1)+'" y1="'+(H-9+j(4)).toFixed(1)+'" x2="'+(x0+34+j(2)).toFixed(1)+'" y2="'+(7+j(4)).toFixed(1)+'"/>';
-  }
-  return '<svg class="tally" width="'+(gr*G*sc).toFixed(0)+'" height="'+(H*sc).toFixed(0)+'" viewBox="0 0 '+gr*G+' '+H+'"><title>'+n+' b ('+g+' G + '+a+' A)</title>'+o+'</svg>';
-}
 function rowHtml(label,t,cls,maxB){
-  return '<tr class="'+(cls||'')+'"><td class="opp">'+label+(cls?'':'<div class="tl">'+tally(t.g,t.a,label,maxB)+'</div>')+'</td><td>'+t.z+'</td><td>'+t.g+'</td><td>'+t.a+'</td><td class="pts">'+t.b+'</td><td class="hide-m">'+(t.z?(t.b/t.z).toFixed(2):'–')+'</td><td>'+fmtPm(t.pm)+'</td><td class="hide-m">'+t.tm+'</td><td class="hide-m">'+fmtToi(t)+'</td><td class="hide-m">'+wlHtml(t)+'</td><td class="hide-m">'+(t.form||'')+'</td><td class="tld">'+(cls?'':tally(t.g,t.a,label,maxB))+'</td></tr>';
+  return '<tr class="'+(cls||'')+'"><td class="opp">'+label+'</td><td>'+t.z+'</td><td class="gab g'+(t.g?'':' zero')+'">'+t.g+'</td><td class="gab a'+(t.a?'':' zero')+'">'+t.a+'</td><td class="gab pts'+(t.b?'':' zero')+'"'+(cls?'':bg(t.b,maxB))+'>'+t.b+'</td><td class="hide-m">'+(t.z?(t.b/t.z).toFixed(2):'–')+'</td><td>'+fmtPm(t.pm)+'</td><td class="hide-m">'+t.tm+'</td><td class="hide-m">'+fmtToi(t)+'</td><td class="hide-m">'+wlHtml(t)+'</td></tr>';
 }
-var COLS=[['Z','z'],['G','g'],['A','a'],['B','b'],['B/Z','bz','hide-m'],['+/-','pm'],['TM','tm','hide-m'],['TOI Ø','toi','hide-m'],['V–P','w','hide-m']];
+var COLS=[['Z','z'],['G','g','gab'],['A','a','gab'],['B','b','gab'],['B/Z','bz','hide-m'],['+/-','pm'],['TM','tm','hide-m'],['TOI Ø','toi','hide-m'],['V–P','w','hide-m']];
 function headHtml(first){
   return '<thead><tr><th data-k="k">'+first+'</th>'+COLS.map(function(c){
     var on=sortKey===c[1];
-    return '<th data-k="'+c[1]+'" class="'+(c[2]||'')+(on?(sortDir<0?' desc':' asc'):'')+'">'+c[0]+'</th>';
-  }).join('')+'<th class="hide-m nos">Posl. zápasy</th><th class="nos tld" style="text-align:left;padding-left:12px">Body čárkami</th></tr></thead>';
+    return '<th data-k="'+c[1]+'" title="'+({g:'Góly',a:'Asistence',b:'Body'}[c[1]]||'')+'" class="'+(c[2]||'')+(on?(sortDir<0?' desc':' asc'):'')+'">'+c[0]+'</th>';
+  }).join('')+'</tr></thead>';
 }
 function val(d,k){var t=d.t;if(k==='k')return d.k;if(k==='bz')return t.z?t.b/t.z:0;if(k==='toi')return t.toiz?t.toi/t.toiz:0;return t[k]}
 function nameplate(num,big,small){return '<div class="sbn"><b>'+big+'</b>'+(small?'<span>'+small+'</span>':'')+(num!==''&&num!=null?'<i>#'+num+'</i>':'')+'</div>'}
@@ -591,8 +567,7 @@ function render(){
     tiles=tile(Object.keys(groups).length,'Hráčů')+tile(sum.g+'+'+sum.a,'G + A')+tile(sum.b,'Bodů celkem');
   }
   $('tiles').innerHTML=plate+'<div class="sbs">'+tiles+'</div>';
-  var data=Object.keys(groups).map(function(k){var t=agg(groups[k]);t.form=formHtml(groups[k]);return {k:k,t:t}});
-  if(all)all.form=formHtml(rows);
+  var data=Object.keys(groups).map(function(k){var t=agg(groups[k]);return {k:k,t:t}});
   data.sort(function(x,y){
     if(sortKey){var a=val(x,sortKey),b=val(y,sortKey);return sortDir*(a<b?-1:a>b?1:0)}
     return (y.t.b-x.t.b)||(y.t.z-x.t.z)||(x.k<y.k?-1:1);
