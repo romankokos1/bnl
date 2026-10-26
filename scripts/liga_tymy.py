@@ -134,7 +134,7 @@ def index() -> None:
     kluby = []
     for f in soubory_klubu():
         d = json.loads(f.read_text(encoding="utf-8"))
-        kluby.append({"kod": d["kod"], "nazev": d["nazev"], "hracu": len(d["hraci"]), "brankaru": len(d.get("brankari", {})),
+        kluby.append({"kod": d["kod"], "nazev": d["nazev"], "hracu": len(d["hraci"]), "brankaru": len(d.get("brankari", {})), "jm": sorted(d["hraci"]), "br": sorted(d.get("brankari", {})),
                       "radku": sum(len(r) for r in d["hraci"].values()),
                       "vygenerovano": d["vygenerovano"]})
     (OUT_DIR / "index.json").write_text(json.dumps(kluby, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
