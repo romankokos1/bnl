@@ -163,9 +163,9 @@
   .form { display: inline-flex; gap: 2px; vertical-align: middle; }
   .form i { width: 7px; height: 16px; border-radius: 2px; background: var(--border); }
   .form i.w { background: var(--green); } .form i.l { background: var(--red); }
+  th.nos::after { content: none; }
   .wl { display: inline-block; width: 38px; height: 6px; border-radius: 3px; background: var(--red); overflow: hidden; vertical-align: middle; margin-left: 6px; }
   .wl b { display: block; height: 100%; background: var(--green); }
-  th.nos::after { content: ""; }
   /* milníky */
   .mil-next { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
   .mil-next > div { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
@@ -245,7 +245,7 @@
   <div class="card" id="pristi" style="display:none"></div>
 
   <div class="card">
-    <div class="search"><input type="search" id="hledej" placeholder="🔍 Hledat hráče…" autocomplete="off" aria-label="Hledat hráče"><div class="hres" id="hres" style="display:none"></div></div>
+    <div class="search"><input type="search" id="hledej" placeholder="Hledat hráče…" autocomplete="off" aria-label="Hledat hráče"><div class="hres" id="hres" style="display:none"></div></div>
     <div class="seg">
       <button id="tabP" class="on" type="button">Podle hráče</button>
       <button id="tabT" type="button">Podle soupeře</button>
@@ -716,7 +716,7 @@ function searchRender(){
   var tok=q.split(/\s+/),items=searchItems().filter(function(it){var nn=norm(it.n);return tok.every(function(t){return nn.indexOf(t)>-1})});
   items.sort(function(a,b){var x=norm(a.n).indexOf(tok[0])===0?0:1,y=norm(b.n).indexOf(tok[0])===0?0:1;return (x-y)||byName(a.n,b.n)});
   var total=items.length;items=items.slice(0,8);SHI=0;
-  if(!items.length){box.innerHTML='<div class="none">Nikdo takový tu není.</div>';box.style.display='';return}
+  if(!items.length){box.innerHTML='<div class="none">Žádný hráč nenalezen.</div>';box.style.display='';return}
   box.innerHTML=items.map(function(it,i){return '<button type="button" data-i="'+i+'" class="'+(i===0?'hi':'')+'">'+it.n+'<span>'+(it.club?(TEAMS[it.club]||it.club):'')+(it.g?' · brankář':'')+'</span></button>'}).join('')+(total>8?'<div class="none">…a dalších '+(total-8)+', upřesni hledání</div>':'');
   box.style.display='';box._items=items;
   Array.prototype.forEach.call(box.querySelectorAll('button'),function(b){b.onclick=function(){choose(items[+b.getAttribute('data-i')])}});
