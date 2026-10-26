@@ -56,6 +56,11 @@ def kod_klubu(hraci: dict) -> str | None:
     return c.most_common(1)[0][0] if c else None
 
 
+def soubory_klubu() -> list:
+    """Soubory klubů v docs/liga (bez index.json a rucne.json, které klub neobsahují)."""
+    return [f for f in sorted(OUT_DIR.glob("*.json")) if f.name not in ("index.json", "rucne.json")]
+
+
 def sloucit(nove: dict, stare: dict, idy: dict, stare_idy: dict, sezony: dict) -> None:
     """Přidá do `nove` hráče ze `stare`: neznámé celé, známé (stejné id) jen o sezóny, které nový soubor neobsahuje."""
     for name, rows in stare.items():
@@ -127,9 +132,7 @@ def zpracuj(raw: dict, popis: str) -> dict | None:
 
 def index() -> None:
     kluby = []
-    for f in sorted(OUT_DIR.glob("*.json")):
-        if f.name == "index.json":
-            continue
+    for f in soubory_klubu():
         d = json.loads(f.read_text(encoding="utf-8"))
         kluby.append({"kod": d["kod"], "nazev": d["nazev"], "hracu": len(d["hraci"]), "brankaru": len(d.get("brankari", {})),
                       "radku": sum(len(r) for r in d["hraci"].values()),
@@ -204,9 +207,7 @@ def kontrola_prirazeni() -> None:
     Hráč, který je v souborech dvou klubů (přestup), se před kontrolou sloučí a patří klubu s posledním zápasem."""
     hraci = {}
     cur = 0
-    for f in sorted(OUT_DIR.glob("*.json")):
-        if f.name == "index.json":
-            continue
+    for f in soubory_klubu():
         d = json.loads(f.read_text(encoding="utf-8"))
         for poz, klic in (("bruslař", "hraci"), ("brankář", "brankari")):
             for name, rows in d.get(klic, {}).items():
@@ -242,24 +243,25 @@ def kontrola_prirazeni() -> None:
         esc = lambda v: '"' + str(v).replace('"', '""') + '"'
         return "\ufeff" + "\n".join(";".join(esc(c) for c in row) for row in [hlavicka] + data) + "\n"
 
-    (OUT_DIR / "nejasne.csv").write_text(csv(
-        ["Klub", "Hráč", "Pozice", "Datum", "Sezóna", "Zápas", "Skóre", "Stav", "Tým (odhad) / kandidáti", "Jistota odhadu", "Body v zápase", "Řádek pro scripts/liga_rucne.json"], radky),
-        encoding="utf-8")
+    hlav = ["Klub", "Hráč", "Pozice", "Datum", "Sezóna", "Zápas", "Skóre", "Stav", "Tým (odhad) / kandidáti", "Jistota odhadu", "Body v zápase", "Řádek pro scripts/liga_rucne.json"]
+    pozor = [z for z in radky if z[7] == "nepřiřazeno" or z[9].startswith("nízká")]
+    zbytek = [z for z in radky if z not in pozor]
+    (OUT_DIR / "nejasne.csv").write_text(csv(hlav, pozor), encoding="utf-8")            # jen to, co chce tvou pozornost
+    (OUT_DIR / "nejasne_odhady.csv").write_text(csv(hlav, zbytek), encoding="utf-8")    # odhady s dobrou/střední jistotou
     sh = sorted(([k[0], k[1], k[2], v[0], v[1], v[0] + v[1]] for k, v in souhrn.items()), key=lambda z: (-z[3], -z[5], z[0], z[1]))
     (OUT_DIR / "nejasne_hraci.csv").write_text(csv(
         ["Klub", "Hráč", "Pozice", "Nepřiřazeno", "Odhadem", "Celkem"], sh), encoding="utf-8")
     n_np = sum(1 for z in radky if z[7] == "nepřiřazeno")
-    print(f"Kontrola přiřazení: {n_np} zápasů nepřiřazeno, {len(radky) - n_np} přiřazeno odhadem, "
-          f"u {len(souhrn)} hráčů z {len(hraci)} (docs/liga/nejasne.csv).")
+    print(f"Kontrola přiřazení: {n_np} nepřiřazeno, {len(pozor) - n_np} nejistých odhadů (nejasne.csv), "
+          f"{len(zbytek)} spolehlivějších odhadů (nejasne_odhady.csv), "
+          f"u {len(souhrn)} hráčů z {len(hraci)}.")
     for z in sh[:15]:
         print(f"   {z[0]:4} {z[1]:28} nepřiřazeno {z[3]}, odhadem {z[4]}")
 
 
 def vycisti_stare() -> None:
     """Přesune z uložených klubů brankáře z bruslařů do samostatné části (bez nového stahování)."""
-    for f in sorted(OUT_DIR.glob("*.json")):
-        if f.name == "index.json":
-            continue
+    for f in soubory_klubu():
         d = json.loads(f.read_text(encoding="utf-8"))
         presun = [n for n, r in d["hraci"].items() if je_brankar(r)]
         for n in presun:
