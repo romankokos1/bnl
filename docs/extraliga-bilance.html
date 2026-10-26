@@ -1111,12 +1111,18 @@ function loadClub(k){
   return Promise.all(list.map(function(c){var had=!!LOADED[c];return ensure(c).then(function(){if(!had){done++;note('Načítám data… '+done+'/'+todo.length)}})})).then(function(){
     note('');var st=Object.keys(STAMP).map(function(c){return STAMP[c]}).sort().pop();
     if(st){var t=new Date(st);$('updated').textContent='Extraliga vč. play off · data z hokej.cz · aktualizováno '+t.getDate()+'. '+(t.getMonth()+1)+'. '+t.getFullYear()}
+    return RUCP.then(applyFix);
   });
 }
 function clubSelect(){
   var sel=$('klub'),cur=sel.value;
   sel.innerHTML='<option value="">Celá liga (načte všechny kluby)</option>'+CLUBS.map(function(c){return '<option value="'+c.kod+'">'+c.nazev+'</option>'}).join('');
   sel.value=cur;
+}
+var RUC={},RUCP=getJson('liga/rucne.json').then(function(r){RUC=r||{}});
+function applyFix(){
+  [EMB,EMBG].forEach(function(M){Object.keys(M).forEach(function(n){M[n].forEach(function(r){var f=RUC[n+'|'+r.dt];if(f)r.fix=f})})});
+  INF={};INFGC={};
 }
 $('klub').onchange=function(){
   var k=$('klub').value;try{localStorage.setItem('bilanceLigaKlub',k)}catch(e){}
