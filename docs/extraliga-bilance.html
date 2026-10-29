@@ -49,6 +49,14 @@
   .fltr summary::before { content: "▸ "; } .fltr[open] summary::before { content: "▾ "; }
   .fgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 16px; margin-top: 8px; }
   @media (min-width: 700px) { .fltr summary { display: none; } }
+  .pc-wrap svg { cursor: zoom-in; }
+  .zoomov { position: fixed; inset: 0; z-index: 9999; background: rgba(15,20,35,.82); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .zoombar { position: sticky; top: 0; z-index: 1; display: flex; gap: 10px; justify-content: center; padding: 10px; background: rgba(15,20,35,.9); }
+  .zoombar .btn { background: #fff; color: #1d2740; border-color: #fff; }
+  .zoombar .btn.sec { background: transparent; color: #fff; border-color: #fff; }
+  .pc-hint { font-size: .8rem; color: var(--muted); margin: -6px 0 0; }
+  .zoombox { display: flex; justify-content: center; padding: 14px 12px 28px; cursor: zoom-out; }
+  .zoombox svg { width: min(96vw, 760px); height: auto; box-shadow: 0 10px 40px rgba(0,0,0,.5); border-radius: 4px; background: #fff; }
   h3.kh { font-size: 1rem; margin: 22px 0 8px; }
   h4 { font-size: .85rem; margin: 12px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
   .kstats { display: flex; flex-wrap: wrap; gap: 10px 26px; margin: 4px 0 6px; }
@@ -1962,6 +1970,16 @@ function cardSvg(n,rows,final,all){
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 '+H+'" width="600" height="'+H+'" '+F+'><rect width="600" height="'+H+'" fill="#ffffff"/>'+b+'</svg>';
 }
 
+function zoomCard(n,rows,all){
+  var o=document.createElement('div');o.className='zoomov';
+  o.innerHTML='<div class="zoombar"><button type="button" class="btn" id="zmPng">Stáhnout PNG</button><button type="button" class="btn sec" id="zmX">Zavřít ✕</button></div><div class="zoombox">'+cardSvg(n,rows,true,all)+'</div>';
+  function close(){document.removeEventListener('keydown',key);o.remove();document.body.style.overflow=''}
+  function key(e){if(e.key==='Escape')close()}
+  o.onclick=function(e){if(e.target===o||e.target.className==='zoombox')close()};
+  document.addEventListener('keydown',key);
+  document.body.appendChild(o);document.body.style.overflow='hidden';
+  $('zmX').onclick=close;$('zmPng').onclick=function(){savePng(n,rows,all)};
+}
 function pcardHtml(n,rows){
   var all=prowAll;
   var el=$('pcard');
@@ -1969,8 +1987,9 @@ function pcardHtml(n,rows){
   var key=[n,$('season').value,$('comp').value,$('club').value,$('kde').value,rows.length,all.length].join('|');
   if(key===PCKEY&&el.innerHTML)return;
   PCKEY=key;
-  el.innerHTML='<div class="pc-wrap">'+cardSvg(n,rows,false,all)+'<div class="row" style="margin:0"><button class="btn" id="pcPng" type="button">Stáhnout kartu (PNG)</button></div></div>';
+  el.innerHTML='<div class="pc-wrap">'+cardSvg(n,rows,false,all)+'<div class="row" style="margin:0"><button class="btn" id="pcPng" type="button">Stáhnout kartu (PNG)</button></div><p class="pc-hint">Klepnutím na kartu ji zvětšíš.</p></div>';
   $('pcPng').onclick=function(){savePng(n,rows,all)};
+  var psvg=el.querySelector('svg');if(psvg)psvg.onclick=function(){zoomCard(n,rows,all)};
   animateTiles();animateCard(el);
 }
 function animateCard(el){
