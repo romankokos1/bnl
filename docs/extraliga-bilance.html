@@ -1129,17 +1129,18 @@ function gpf(n,O,cut){
   }
   return o;
 }
-function goaliesOf(K,O,cut){return clubGoalies(K).map(function(n){return gpf(n,O,cut)}).filter(function(o){return o.active&&o.t.z>0}).sort(function(a,b){return b.t.min-a.t.min}).slice(0,3)}
+function goaliesOf(K,O,cut){return clubGoalies(K).map(function(n){return gpf(n,O,cut)}).filter(function(o){return o.t.z>0}).sort(function(a,b){return b.t.min-a.t.min})}
 function goalieTable(G,O){
   if(!G.length)return '';
   return '<h4 class="gh">Brankáři</h4><div class="tblwrap"><table class="ser"><thead><tr><th class="l">Brankář</th><th class="hide-m">Z</th><th>Úsp. %</th><th>GAA</th><th class="hide-m">SO</th><th title="Úspěšnost v posledních 5 zápasech">Forma 5</th><th class="hide-m">Proti '+O+'</th></tr></thead><tbody>'
    +G.map(function(o){var t=o.t,f=o.form;
-     return '<tr><td class="l"><b>'+glink(o.n)+'</b></td><td class="hide-m">'+t.z+'</td><td class="pts">'+svp(t)+'</td><td>'+(t.min?t.gaa.toFixed(2):'–')+'</td><td class="hide-m">'+t.so+'</td>'
+     return '<tr'+(o.active?'':' class="muted"')+'><td class="l"><b>'+glink(o.n)+'</b>'+(o.active?'':' <span class="small">naposled '+dShort(o.cur[o.cur.length-1].dt)+'</span>')+'</td><td class="hide-m">'+t.z+'</td><td class="pts">'+svp(t)+'</td><td>'+(t.min?t.gaa.toFixed(2):'–')+'</td><td class="hide-m">'+t.so+'</td>'
       +'<td>'+(f&&f.sh?svp(f)+' <span class="muted small">%</span>':'–')+'</td><td class="hide-m">'+(o.vs?svp(o.vs)+' % <span class="muted small">v '+o.vs.z+' z. · '+o.vs.w+'–'+o.vs.l+'</span>':'<span class="muted">–</span>')+'</td></tr>'}).join('')+'</tbody></table></div>';
 }
 function goalieFacts(K,O,G){
   var F=[];
   G.forEach(function(o){
+    if(!o.active)return;
     var t=o.t,f=o.form,nm='<b>'+glink(o.n)+'</b>';
     if(f&&f.z>=4&&f.sh){
       if(f.svp>=93)F.push({s:55,k:'Brankář',h:nm+' má v posledních '+f.z+' zápasech úspěšnost '+f.svp.toFixed(1)+' % (GAA '+f.gaa.toFixed(2)+')'});
