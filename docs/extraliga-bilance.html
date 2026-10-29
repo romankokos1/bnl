@@ -1555,13 +1555,24 @@ function applyData(d){
 function expand(a){return {dt:a[0],kolo:a[1],comp:a[2],a:a[3],b:a[4],sa:a[5],sb:a[6],ot:!!a[7],g:a[8],as:a[9],p:a[10],pm:a[11],tm:a[12],toi:a[13],season:a[14]}}
 function lastDt(rows){var m='';rows.forEach(function(r){if(r.dt>m)m=r.dt});return m}
 function mergeRows(old,add){var seen={};old.forEach(function(r){seen[r.dt+r.a+r.b]=1});var out=old.slice();add.forEach(function(r){if(!seen[r.dt+r.a+r.b])out.push(r)});return out}
+var NK={},IDK={};
+function normTok(s){return norm(String(s).replace(/ \([A-Z]{2,4}\)$/,'')).split(/\s+/).sort().join(' ')}
+function compat(a,b){ // zápasy se smí překrývat jen jako tentýž zápas se stejnou řádkou; ve stejný den nemůže hrát dva různé zápasy
+  var m={};a.forEach(function(r){m[r.dt]=r});
+  for(var i=0;i<b.length;i++){var r=b[i],q=m[r.dt];if(!q)continue;if(q.a!==r.a||q.b!==r.b||q.g!==r.g||q.as!==r.as||q.p!==r.p)return false}
+  return true}
 function addPlayer(kod,name,rows,id){
-  var key=name;
-  if(EMB[key]){
-    if(id&&IDS[key]===id){ // stejný hráč ve dvou klubech (přestup): sloučit zápasy, klub podle posledního zápasu
-      var d1=lastDt(EMB[key]),d2=lastDt(rows);EMB[key]=mergeRows(EMB[key],rows);if(d2>d1)KLUB[key]=kod;return}
-    key=name+' ('+kod+')'}
-  EMB[key]=rows;KLUB[key]=kod;IDS[key]=id||null;if(id)LASTFMT[key]=true;
+  var key=name,nk=normTok(name),k0=null;
+  // stejný hráč podle id (i s jiným pořadím jména), jinak podle jména, pokud do sebe zápasy sedí (přestup, hráč z dat Motoru bez id)
+  if(id&&IDK[id]&&EMB[IDK[id]])k0=IDK[id];
+  else{var c=EMB[key]?key:NK[nk];if(c&&EMB[c]&&!(id&&IDS[c]&&IDS[c]!==id)&&compat(EMB[c],rows))k0=c}
+  if(k0){ // přestup: sloučit zápasy, klub podle posledního zápasu
+    var d1=lastDt(EMB[k0]),d2=lastDt(rows);EMB[k0]=mergeRows(EMB[k0],rows);if(d2>d1)KLUB[k0]=kod;
+    if(id&&!IDS[k0]){IDS[k0]=id;IDK[id]=k0}
+    return}
+  if(EMB[key])key=name+' ('+kod+')';
+  EMB[key]=rows;KLUB[key]=kod;IDS[key]=id||null;if(id){LASTFMT[key]=true;IDK[id]=key}
+  if(!NK[nk])NK[nk]=key;
 }
 var LOADED={};
 function addGoalie(kod,name,rows,id){
