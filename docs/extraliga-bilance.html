@@ -43,6 +43,13 @@
   ul.h2h li { padding: 3px 0; } ul.h2h .v { font-weight: 700; margin-left: 6px; }
   .zscore { font-size: 1.1rem; margin: 6px 0 4px; } .zscore .v { font-weight: 700; margin: 0 8px; }
   h4.gh { margin: 14px 0 4px; font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .fltr { grid-column: 1 / -1; }
+  .fltr summary { cursor: pointer; font: 600 .85rem var(--f-chalk); color: var(--muted); padding: 2px 0; list-style: none; }
+  .fltr summary::-webkit-details-marker { display: none; }
+  .fltr summary::before { content: "▸ "; } .fltr[open] summary::before { content: "▾ "; }
+  .fgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 16px; margin-top: 8px; }
+  @media (min-width: 700px) { .fltr summary { display: none; } }
+  @media (max-width: 640px) { .fgrid { grid-template-columns: 1fr 1fr; } }
 </style>
 <style>
   /* Vzhled: pracovní podklad v duchu trenérské tabule. Bílý podklad, jasné G/A/B. */
@@ -286,6 +293,7 @@
         <select id="player"></select>
         <select id="opp" style="display:none"></select>
       </div>
+      <details id="fltr" class="fltr"><summary id="fltrSum">Filtry</summary><div class="fgrid">
       <div>
         <label for="season">Sezóna</label>
         <select id="season"></select>
@@ -302,6 +310,7 @@
         <label for="kde">Kde</label>
         <select id="kde"><option value="">Doma i venku</option><option value="D">Doma</option><option value="V">Venku</option></select>
       </div>
+      </div></details>
     </div>
     <div class="pickmode">
       <button type="button" id="pmTiles">Dlaždice</button>
@@ -564,12 +573,19 @@ function ga(g,a){return '<span class="cg">'+g+'</span>+<span class="ca">'+a+'</s
 function nameplate(num,big,small){return '<div class="sbn"><b>'+big+'</b>'+(small?'<span>'+small+'</span>':'')+(num!==''&&num!=null?'<i>#'+num+'</i>':'')+'</div>'}
 function tile(v,l){return '<div class="tile"><b>'+v+'</b><span>'+l+'</span></div>'}
 
+function fltrSum(){
+  var n=['season','comp','club','kde'].filter(function(i){return $(i).value}).length;
+  $('fltrSum').innerHTML='Filtry'+(n?' <span class="badge">'+n+' aktivní</span>':' <span class="muted small">žádné</span>');
+}
+try{$('fltr').open=window.innerWidth>=700}catch(e){}
 function setView(){
   var H=mode==='H'||mode==='G'||mode==='S'||mode==='Z';
   $('split').style.display=H?'none':'';
-  Array.prototype.forEach.call(document.querySelectorAll('.filters > div'),function(d){d.style.display=(mode==='Z'||mode==='S'&&!d.querySelector(SS.tool==='O'?'#klub,#comp,#season':'#klub,#comp'))?'none':''});
+  Array.prototype.forEach.call(document.querySelectorAll('.filters > div, .fgrid > div'),function(d){d.style.display=(mode==='Z'||mode==='S'&&!d.querySelector(SS.tool==='O'?'#klub,#comp,#season':'#klub,#comp'))?'none':''});
   $('linkBtn').style.display=$('linkSolo').style.display=mode==='P'?'':'none';
-  document.querySelector('.f-main').style.display=H?'none':'';
+  document.querySelector('.f-main').style.display=(H||pick==='tiles')?'none':'';
+  $('fltr').style.display=mode==='Z'?'none':'';
+  fltrSum();
   document.querySelector('.pickmode').style.display=H?'none':'';
   $('chips').style.display=(H||pick!=='tiles')?'none':'';
   $('tiles').style.display=H?'none':'';
