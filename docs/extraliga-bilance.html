@@ -50,6 +50,24 @@
   .fgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 16px; margin-top: 8px; }
   @media (min-width: 700px) { .fltr summary { display: none; } }
   @media (max-width: 640px) { .fgrid { grid-template-columns: 1fr 1fr; } }
+  :root { --tint-ui: #eef2f8; --tint-hi: #fbf3e4; }
+  :root[data-theme="dark"] { --tint-ui: rgba(255,255,255,.05); --tint-hi: rgba(243,211,107,.07); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tint-ui: rgba(255,255,255,.05); --tint-hi: rgba(243,211,107,.07); } }
+  .card.tint { padding: 16px 18px; border-radius: 8px; }
+  .card.tint::before { display: none; }
+  .card.t-ui { background: var(--tint-ui); }
+  .card.t-hi { background: var(--tint-hi); }
+  .t-ui .search input { background: var(--board); }
+  #loadnote:empty { display: none; }
+  .card.t-ui > :last-child { margin-bottom: 0; }
+  ul.facts { background: var(--tint-hi); border-radius: 6px; padding: 4px 14px; }
+  ul.facts li:last-child { border-bottom: 0; }
+  ul.h2h { background: var(--tint-ui); border-radius: 6px; padding: 8px 14px; }
+  .fltr summary { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--y); border-radius: 6px; padding: 6px 12px; color: var(--y); font-weight: 700; background: var(--board); }
+  .fltr summary.on { background: var(--y); color: var(--board); }
+  .fltr summary.on .badge { border-color: currentColor; color: inherit; }
+  @media (max-width: 640px) { .card.tint { padding: 12px 12px; } }
+  @media (min-width: 700px) { .fltr summary { display: none; } }
 </style>
 <style>
   /* Vzhled: pracovní podklad v duchu trenérské tabule. Bílý podklad, jasné G/A/B. */
@@ -276,7 +294,7 @@
 
   <div class="card" id="pristi" style="display:none"></div>
 
-  <div class="card">
+  <div class="card tint t-ui">
     <div class="search"><input type="search" id="hledej" placeholder="Hledat hráče…" autocomplete="off" aria-label="Hledat hráče"><div class="hres" id="hres" style="display:none"></div></div>
     <div class="seg">
       <button id="tabP" class="on" type="button">Podle hráče</button>
@@ -341,9 +359,9 @@
     <p class="small muted">Řadit jde klepnutím na hlavičku sloupce. Tým hráče se odvozuje z po sobě jdoucích zápasů v sezóně.</p>
   </div>
 
-  <div class="card mil" id="mil" style="display:none"></div>
+  <div class="card tint t-hi mil" id="mil" style="display:none"></div>
 
-  <details class="card" id="rekordy" style="display:none"></details>
+  <details class="card tint t-hi" id="rekordy" style="display:none"></details>
 
   </div>
   <div class="colR">
@@ -574,8 +592,9 @@ function nameplate(num,big,small){return '<div class="sbn"><b>'+big+'</b>'+(smal
 function tile(v,l){return '<div class="tile"><b>'+v+'</b><span>'+l+'</span></div>'}
 
 function fltrSum(){
+  var on=['season','comp','club','kde'].some(function(i){return $(i).value});$('fltrSum').className=on?'on':'';
   var n=['season','comp','club','kde'].filter(function(i){return $(i).value}).length;
-  $('fltrSum').innerHTML='Filtry'+(n?' <span class="badge">'+n+' aktivní</span>':' <span class="muted small">žádné</span>');
+  $('fltrSum').innerHTML='Filtry'+(n?' <span class="badge">'+n+' aktivní</span>':': žádné');
 }
 try{$('fltr').open=window.innerWidth>=700}catch(e){}
 function setView(){
