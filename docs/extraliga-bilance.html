@@ -42,6 +42,7 @@
   .fk { flex: none; width: 10.5em; font-size: .75rem; font-weight: 700; color: var(--y); text-transform: uppercase; letter-spacing: .03em; padding-top: 2px; }
   ul.h2h li { padding: 3px 0; } ul.h2h .v { font-weight: 700; margin-left: 6px; }
   .zscore { font-size: 1.1rem; margin: 6px 0 4px; } .zscore .v { font-weight: 700; margin: 0 8px; }
+  h4.gh { margin: 14px 0 4px; font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
 </style>
 <style>
   /* Vzhled: pracovní podklad v duchu trenérské tabule. Bílý podklad, jasné G/A/B. */
@@ -89,8 +90,8 @@
   .f-main, .f-club { grid-column: 1 / -1; }
   .seg.sub { margin-bottom: 10px; }
   .gsel { margin-bottom: 12px; }
-  #gcard .tiles { grid-template-columns: repeat(5, 1fr); }
-  @media (max-width: 640px) { #gcard .tiles { grid-template-columns: repeat(3, 1fr); } }
+  #gcard .tiles { display: flex; flex-wrap: wrap; gap: 10px 0; }
+  @media (max-width: 640px) { #gcard th:nth-child(3), #gcard td:nth-child(3), #gcard th:nth-child(4), #gcard td:nth-child(4) { display: none; } }
   .filters label { display: block; font-size: .8rem; color: var(--muted); font-weight: 600; margin-bottom: 1px; }
   select, input[type=text], input[type=search], textarea { width: 100%; font: inherit; color: var(--chalk); background: transparent; border: 0; border-bottom: 2px dashed var(--line); border-radius: 0; padding: 4px 2px 5px; }
   select option { background: var(--board); color: var(--chalk); }
@@ -1112,16 +1113,57 @@ function teamBlock(K,O,cut,P,facts){
   if(act.length>12)h+='<p class="small muted"><a class="pl" id="zAll">'+(ZS.all?'Jen nejlepších 12':'Zobrazit všech '+act.length+' hráčů')+'</a></p>';
   return h;
 }
+function glink(n){return '<a class="pl" data-g="'+n+'">'+n+'</a>'}
+function bindG(root){Array.prototype.forEach.call(root.querySelectorAll('a[data-g]'),function(a){a.onclick=function(){goSearch({n:a.getAttribute('data-g'),g:true})}})}
+function clubGoalies(k){return Object.keys(EMBG).filter(function(n){return KLUBG[n]===k})}
+function svp(t){return t.sh?t.svp.toFixed(1):'–'}
+function gpf(n,O,cut){
+  var all=INFG(n).slice().sort(function(x,y){return x.dt<y.dt?-1:x.dt>y.dt?1:0}),cur=all.filter(function(r){return r.season===CUR});
+  var o={n:n,cur:cur,t:gAgg(cur),tot:gAgg(all),active:false,form:null,vs:null,former:[]};
+  if(!cur.length)return o;
+  o.active=daysBetween(cur[cur.length-1].dt,cut)<=10;
+  o.form=gAgg(cur.slice(-5));
+  if(O){
+    var rv=all.filter(function(r){return opp(r)===O});if(rv.length)o.vs=gAgg(rv);
+    var fs={};all.forEach(function(r){if(r.team===O)fs[r.season]=1});o.former=Object.keys(fs).map(Number).sort();
+  }
+  return o;
+}
+function goaliesOf(K,O,cut){return clubGoalies(K).map(function(n){return gpf(n,O,cut)}).filter(function(o){return o.active&&o.t.z>0}).sort(function(a,b){return b.t.min-a.t.min}).slice(0,3)}
+function goalieTable(G,O){
+  if(!G.length)return '';
+  return '<h4 class="gh">Brankáři</h4><div class="tblwrap"><table class="ser"><thead><tr><th class="l">Brankář</th><th class="hide-m">Z</th><th>Úsp. %</th><th>GAA</th><th class="hide-m">SO</th><th title="Úspěšnost v posledních 5 zápasech">Forma 5</th><th class="hide-m">Proti '+O+'</th></tr></thead><tbody>'
+   +G.map(function(o){var t=o.t,f=o.form;
+     return '<tr><td class="l"><b>'+glink(o.n)+'</b></td><td class="hide-m">'+t.z+'</td><td class="pts">'+svp(t)+'</td><td>'+(t.min?t.gaa.toFixed(2):'–')+'</td><td class="hide-m">'+t.so+'</td>'
+      +'<td>'+(f&&f.sh?svp(f)+' <span class="muted small">%</span>':'–')+'</td><td class="hide-m">'+(o.vs?svp(o.vs)+' % <span class="muted small">v '+o.vs.z+' z. · '+o.vs.w+'–'+o.vs.l+'</span>':'<span class="muted">–</span>')+'</td></tr>'}).join('')+'</tbody></table></div>';
+}
+function goalieFacts(K,O,G){
+  var F=[];
+  G.forEach(function(o){
+    var t=o.t,f=o.form,nm='<b>'+glink(o.n)+'</b>';
+    if(f&&f.z>=4&&f.sh){
+      if(f.svp>=93)F.push({s:55,k:'Brankář',h:nm+' má v posledních '+f.z+' zápasech úspěšnost '+f.svp.toFixed(1)+' % (GAA '+f.gaa.toFixed(2)+')'});
+      else if(f.svp<=88)F.push({s:45,k:'Brankář',h:nm+' má v posledních '+f.z+' zápasech úspěšnost jen '+f.svp.toFixed(1)+' % (GAA '+f.gaa.toFixed(2)+')'});
+      if(f.so>=2)F.push({s:58,k:'Brankář',h:nm+' vychytal '+f.so+' nuly v posledních '+f.z+' zápasech'});
+    }
+    if(o.vs&&o.vs.z>=3&&o.vs.sh&&(o.vs.svp>=93||o.vs.svp<=89))F.push({s:40+o.vs.z,k:'Brankář proti '+O,h:nm+' proti '+clubNm(O)+': úsp. '+o.vs.svp.toFixed(1)+' % ve '+o.vs.z+' '+cz(o.vs.z,'z')+', GAA '+o.vs.gaa.toFixed(2)+', bilance '+o.vs.w+'–'+o.vs.l});
+    var nz=Math.ceil((o.tot.z+1)/50)*50;if(o.tot.z>=45&&nz-o.tot.z<=3)F.push({s:60,k:'Milník',h:nm+' je '+(nz-o.tot.z)+' '+cz(nz-o.tot.z,'z')+' od '+nz+'. '+GEN.z+' v extralize (teď '+o.tot.z+')'});
+    var ns=Math.ceil((o.tot.so+1)/5)*5;if(o.tot.so>=4&&ns-o.tot.so===1)F.push({s:55,k:'Milník',h:nm+' potřebuje ještě 1 nulu na '+ns+'. nulu v extralize (teď '+o.tot.so+')'});
+    if(o.former.length)F.push({s:45,k:'Bývalý hráč soupeře',h:nm+' dříve chytal za '+clubNm(O)+' ('+seasonsTxt(o.former)+')'});
+  });
+  return F;
+}
 function renderBefore(el,A,B,cut){
   var PA=clubPlayers(A).map(function(n){return pf(n,B,cut)}),PB=clubPlayers(B).map(function(n){return pf(n,A,cut)});
   var G=h2hList(A,B),last5=G.slice(0,5),w={};
   last5.forEach(function(g){var x=winnerOf(g);if(x)w[x]=(w[x]||0)+1});
   var FA=beforeFacts(A,B,cut,PA),FB=beforeFacts(B,A,cut,PB),FG=[];
   if(last5.length>=3)FG.push({s:60,k:'Vzájemné zápasy',h:'Bilance posledních '+last5.length+' vzájemných zápasů: '+clubNm(A)+' '+(w[A]||0)+' – '+(w[B]||0)+' '+clubNm(B)});
+  var GA_=goaliesOf(A,B,cut),GB_=goaliesOf(B,A,cut);FA=FA.concat(goalieFacts(A,B,GA_));FB=FB.concat(goalieFacts(B,A,GB_));
   var sA=PA.filter(function(o){return o.active}).sort(function(a,b){return b.t.b-a.t.b})[0],sB=PB.filter(function(o){return o.active}).sort(function(a,b){return b.t.b-a.t.b})[0];
   if(sA)FA.push({s:20,k:'Lídr týmu',h:'<b>'+plink(sA.n)+'</b> '+ga(sA.t.g,sA.t.a)+' = '+sA.t.b+' b v '+sA.t.z+' '+cz(sA.t.z,'z')});
   if(sB)FB.push({s:20,k:'Lídr týmu',h:'<b>'+plink(sB.n)+'</b> '+ga(sB.t.g,sB.t.a)+' = '+sB.t.b+' b v '+sB.t.z+' '+cz(sB.t.z,'z')});
-  var h='<div class="zcols"><div>'+teamBlock(A,B,cut,PA)+'</div><div>'+teamBlock(B,A,cut,PB)+'</div></div>';
+  var h='<div class="zcols"><div>'+teamBlock(A,B,cut,PA)+goalieTable(GA_,B)+'</div><div>'+teamBlock(B,A,cut,PB)+goalieTable(GB_,A)+'</div></div>';
   h+='<h3>Vzájemné zápasy</h3>'+(G.length?'<ul class="h2h">'+G.slice(0,8).map(function(g){return '<li><span class="muted">'+fdate(g.dt)+'</span> '+(winnerOf(g)===g.a?'<b>':'')+clubNm(g.a)+(winnerOf(g)===g.a?'</b>':'')+' – '+(winnerOf(g)===g.b?'<b>':'')+clubNm(g.b)+(winnerOf(g)===g.b?'</b>':'')+' <span class="v">'+(g.sa==null?'':g.sa+':'+g.sb+(g.ot?' p':''))+'</span></li>'}).join('')+'</ul>':'<p class="muted small">V datech není žádný vzájemný zápas.</p>');
   h+='<div class="zcols"><div><h3>Poznámky: '+clubNm(A)+'</h3>'+factsHtml(FA,10)+'</div><div><h3>Poznámky: '+clubNm(B)+'</h3>'+factsHtml(FB,10)+'</div></div>';
   if(FG.length)h+='<h3>Obecně</h3>'+factsHtml(FG);
@@ -1130,6 +1172,26 @@ function renderBefore(el,A,B,cut){
     return clubNm(A)+' – '+clubNm(B)+'\n\n'+L(FG,9)+'\n\n'+clubNm(A)+':\n'+L(FA,10)+'\n\n'+clubNm(B)+':\n'+L(FB,10)+'\n';
   };
   return h;
+}
+function goalieAfter(K,g){
+  var rows=[];
+  clubGoalies(K).forEach(function(n){
+    var all=INFG(n),rs=all.filter(function(r){return r.dt===g.dt&&((r.a===g.a&&r.b===g.b)||(r.a===g.b&&r.b===g.a))});
+    if(!rs.length)return;
+    var r=rs[0],soS=all.filter(function(q){return q.season===r.season&&q.dt<=g.dt&&q.p===0&&q.g>=55}).length;
+    rows.push({n:n,r:r,so:soS});
+  });
+  rows.sort(function(a,b){return b.r.g-a.r.g});
+  var F=[],h='';
+  if(rows.length){
+    h='<h4 class="gh">Brankáři</h4><div class="tblwrap"><table class="ser"><thead><tr><th class="l">Brankář</th><th>Min</th><th>Zák.</th><th>Obd.</th><th>Úsp. %</th></tr></thead><tbody>'
+     +rows.map(function(x){var r=x.r,sh=r.as+r.p;return '<tr><td class="l"><b>'+glink(x.n)+'</b></td><td>'+r.g+'</td><td>'+r.as+'</td><td>'+r.p+'</td><td class="pts">'+(sh?(r.as/sh*100).toFixed(1):'–')+'</td></tr>'}).join('')+'</tbody></table></div>';
+    rows.forEach(function(x){var r=x.r,nm='<b>'+glink(x.n)+'</b> ('+K+')';
+      if(r.p===0&&r.g>=55)F.push({s:85,k:'Nula',h:nm+' vychytal nulu ('+r.as+' zákroků), v sezóně už '+x.so+'.'});
+      else if(r.g>=55&&r.as>=30)F.push({s:50,k:'Brankář',h:nm+' zachytal '+r.as+' střel'});
+    });
+  }
+  return {h:h,F:F};
 }
 function renderAfter(el,A,B,cut,G){
   var g=G.filter(function(x){return x.dt===ZS.date})[0]||G[0];
@@ -1163,6 +1225,7 @@ function renderAfter(el,A,B,cut,G){
     if(!sc.length)t+='<p class="muted small">Nikdo nebodoval'+(rs.length?' (v datech '+rs.length+' hráčů)':'')+'.</p>';
     else t+='<div class="tblwrap"><table class="ser"><thead><tr><th class="l">Hráč</th><th class="gab" style="color:var(--blue)">G</th><th class="gab" style="color:var(--y)">A</th><th class="gab">B</th><th>+/-</th><th class="hide-m">TOI</th></tr></thead><tbody>'
       +sc.map(function(x){var r=x.r;return '<tr><td class="l"><b>'+plink(x.n)+'</b></td><td class="gab g'+(r.g?'':' zero')+'">'+r.g+'</td><td class="gab a'+(r.as?'':' zero')+'">'+r.as+'</td><td class="gab pts">'+r.p+'</td><td>'+fmtPm(r.pm)+'</td><td class="hide-m">'+(r.toi?Math.floor(r.toi/60)+':'+('0'+r.toi%60).slice(-2):'–')+'</td></tr>'}).join('')+'</tbody></table></div>';
+    var ga_=goalieAfter(K,g);F=F.concat(ga_.F);t+=ga_.h;
     if(no>0)t+='<p class="small muted">Bez bodu: '+no+' '+cz(no,'z').replace('zápas','hráč').replace('zápasy','hráči').replace('zápasů','hráčů')+'.</p>';
     return '<div>'+t+'</div>'}).join('')+'</div>';
   h+='<h3>Co stojí za zmínku</h3>'+factsHtml(F);
@@ -1189,7 +1252,7 @@ function renderZ(){
   var body=document.createElement('div');
   body.innerHTML=ZS.mode==='before'?renderBefore(body,A,B,cut):renderAfter(body,A,B,cut,G);
   el.innerHTML=h;var host=document.createElement('div');host.innerHTML=body.innerHTML;host._txt=body._txt;el.appendChild(host);
-  bindLinks(el);
+  bindLinks(el);bindG(el);
   var bind=function(id,ev,fn){var x=$(id);if(x)x[ev]=fn};
   bind('zA','onchange',function(){ZS.A=$('zA').value;renderZ()});
   bind('zB','onchange',function(){ZS.B=$('zB').value;renderZ()});
