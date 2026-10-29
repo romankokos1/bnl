@@ -74,7 +74,7 @@
   .card h2 { font: 700 1.15rem/1.2 var(--f-chalk); margin: 0 0 12px; }
   .muted { color: var(--muted); } .small { font-size: .88rem; }
   .pos { color: var(--green); font-weight: 600; } .neg { color: var(--red); font-weight: 600; } .warn { color: var(--warn); }
-  .tdot { display: inline-block; width: 9px; height: 9px; margin-right: 7px; background: var(--tc, var(--muted)); border-radius: 50%; }
+  .tdot { display: inline-block; width: 11px; height: 11px; margin-right: 7px; background: var(--tg, var(--muted)); border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(29,39,64,.35); vertical-align: -1px; }
 
   /* záložky */
   .seg { display: flex; flex-wrap: wrap; gap: 4px 24px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
@@ -113,7 +113,7 @@
   .chip:hover { color: var(--y); }
   .chip b { font-weight: 600; }
   .chip .no { color: var(--muted); font-size: .78rem; font-weight: 400; margin-right: 5px; }
-  .chip[style*="--tc"]::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--tc); margin-right: 7px; }
+  .chip[style*="--tg"]::before { content: ""; display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: var(--tg); box-shadow: inset 0 0 0 1px rgba(29,39,64,.35); margin-right: 7px; }
   .chip.on { color: var(--y); box-shadow: inset 0 -2px var(--y); }
   .chip.on .no { color: var(--y); opacity: .7; }
 
@@ -370,9 +370,13 @@ function A(){var o={},k=$('klub')?$('klub').value:'',n;for(n in EMB)if(!k||KLUB[
 function clubName(n){var k=KLUB[n];return TEAMS[k]||k||''}
 function INFR(n){var r=INF[n];if(!r){r=EMB[n].map(function(x){return Object.assign({},x)});inferTeams(r,KLUB[n]);INF[n]=r}return r}
 
-var TEAMS={CEB:'České Budějovice',KLA:'Kladno',VIT:'Vítkovice',LIB:'Liberec',PLZ:'Plzeň',KOM:'Kometa Brno',SPA:'Sparta',PCE:'Pardubice',LIT:'Litvínov',KVA:'Karlovy Vary',OLO:'Olomouc',MHK:'Hradec Králové',MBL:'Mladá Boleslav',TRI:'Třinec',ZLN:'Zlín',CHM:'Chomutov',JIH:'Jihlava',ZNO:'Znojmo'};
-var TEAMCOL={CEB:'#c8102e',KLA:'#1d4ea1',VIT:'#2563b8',LIB:'#1e7fc4',PLZ:'#1b5fa8',KOM:'#b3261e',SPA:'#9b1b30',PCE:'#d92b2b',LIT:'#e0262c',KVA:'#c0392b',OLO:'#2b6cb0',MHK:'#e8590c',MBL:'#d4a017',TRI:'#c8102e',ZLN:'#e11d48',CHM:'#d1242a',JIH:'#e6a700',ZNO:'#6b7280'};
-function tdot(c){return '<i class="tdot" style="--tc:'+(TEAMCOL[c]||'#94a3b8')+'"></i>'}
+var TEAMS={SLA:'Slavia',CEB:'České Budějovice',KLA:'Kladno',VIT:'Vítkovice',LIB:'Liberec',PLZ:'Plzeň',KOM:'Kometa Brno',SPA:'Sparta',PCE:'Pardubice',LIT:'Litvínov',KVA:'Karlovy Vary',OLO:'Olomouc',MHK:'Hradec Králové',MBL:'Mladá Boleslav',TRI:'Třinec',ZLN:'Zlín',CHM:'Chomutov',JIH:'Jihlava',ZNO:'Znojmo'};
+var TEAMCOL={CEB:['#d4202b','#1f5fb4','#f2b705'],SPA:['#8c1230','#111827'],SLA:['#d4202b','#ffffff'],KOM:['#1f5fb4','#ffffff'],TRI:['#ffffff','#d4202b'],PCE:['#d4202b','#ffffff','#1f5fb4'],PLZ:['#ffffff','#1f5fb4'],LIB:['#1f9ad6','#ffffff'],VIT:['#1b3a7a','#ffffff'],MHK:['#f2b705','#d4202b','#ffffff'],KVA:['#8a93a3','#ffffff'],OLO:['#d4202b','#ffffff'],MBL:['#1f8a4c','#ffffff'],LIT:['#f2b705','#111827'],KLA:['#1f5fb4','#ffffff'],CHM:['#d4202b','#8a93a3'],ZLN:['#f2b705','#1f5fb4'],JIH:['#f2b705','#d4202b'],ZNO:['#d4202b','#ffffff','#7a4a2b']};
+function tcs(c){var a=TEAMCOL[c]||['#94a3b8'],g;
+  if(a.length===1)g=a[0];else if(a.length===2)g='linear-gradient(135deg,'+a[0]+' 0 50%,'+a[1]+' 50% 100%)';
+  else g='conic-gradient(from 45deg,'+a[0]+' 0 33.4%,'+a[1]+' 0 66.7%,'+a[2]+' 0)';
+  return g}
+function tdot(c){return '<i class="tdot" style="--tg:'+tcs(c)+'"></i>'}
 function teamCell(c){return tdot(c)+'<b>'+c+'</b>'+(TEAMS[c]?'<span class="full">'+TEAMS[c]+'</span>':'')}
 function teamName(c){return TEAMS[c]?c+' – '+TEAMS[c]:c}
 
@@ -483,7 +487,7 @@ function chipsHtml(){
     names.forEach(function(n){h+='<button type="button" class="chip'+(n===cur?' on':'')+'" data-v="'+n+'" title="'+n+'"><span class="no">'+(KLUB[n]&&!$('klub').value?KLUB[n]:'&nbsp;')+'</span><b>'+surname(n)+'</b></button>'});
   }else{
     cur=$('opp').value;
-    Array.prototype.forEach.call($('opp').options,function(o){var c=o.value;h+='<button type="button" class="chip'+(c===cur?' on':'')+'" style="--tc:'+(TEAMCOL[c]||'#94a3b8')+'" data-v="'+c+'"><span class="no">'+c+'</span><b>'+(TEAMS[c]||c)+'</b></button>'});
+    Array.prototype.forEach.call($('opp').options,function(o){var c=o.value;h+='<button type="button" class="chip'+(c===cur?' on':'')+'" style="--tg:'+tcs(c)+'" data-v="'+c+'"><span class="no">'+c+'</span><b>'+(TEAMS[c]||c)+'</b></button>'});
   }
   $('chips').innerHTML=h;
   var bs=$('chips').querySelectorAll('.chip');
