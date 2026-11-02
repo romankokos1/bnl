@@ -2222,29 +2222,14 @@ function dotSvg(cx,cy,r,c){
 }
 function cardSvg(n,rows,final,all){
   all=all||rows;
-  var CB='#1f5fa8',CA='#c76400',CD='#1d2740',CM='#5b6478',CP='#f1f2ee';
+  var CB='#1f5fa8',CA='#c76400',CD='#1d2740',CM='#5b6478',CP='#eef0f4';
   var M=cardModel(n,rows),np=nameParts(n),sur=np.sur,first=np.first,no=CISLA[n]!=null?CISLA[n]:'',club=KLUB[n]||'';
   var F='font-family="IBM Plex Sans,Segoe UI,Helvetica,Arial,sans-serif"';
-  var b='',Y=0,cols=TEAMCOL[club]||['#94a3b8'];
-  /* hlavička */
-  b+='<rect width="600" height="170" fill="'+CD+'"/>';
-  var sw=600/cols.length;cols.forEach(function(c,i){b+='<rect x="'+(i*sw).toFixed(1)+'" y="170" width="'+(sw+.5).toFixed(1)+'" height="8" fill="'+c+'"/>'});
-  b+='<rect y="177" width="600" height="1" fill="#000" fill-opacity=".15"/>';
-  b+='<text x="572" y="158" text-anchor="end" font-size="132" font-weight="700" fill="#ffffff" fill-opacity="0.1">'+(no!==''?'#'+no:'')+'</text>';
-  b+='<text x="36" y="52" font-size="17" font-weight="600" fill="#ffffff" fill-opacity="0.8" letter-spacing="1.5">'+xe(first.toUpperCase())+'</text>';
-  b+='<text x="36" y="106" font-size="'+(sur.length>11?40:50)+'" font-weight="700" fill="#ffffff">'+xe(sur)+'</text>';
-  b+=dotSvg(46,138,8,club);
-  b+='<text x="62" y="143" font-size="13" fill="#ffffff" fill-opacity="0.8">'+xe(clubName(n)||'Extraliga')+' · '+xe(filtDesc())+'</text>';
-  /* statistiky */
-  var t=M.all,pm=(t.pm>0?'+':'')+t.pm;
-  var st=[['Zápasy',t.z,'',CD,false],['Góly',t.g,'',CB,false],['Asistence',t.a,'',CA,false],['Body',t.b,'',CD,true],['+/-',t.pm,t.pm>0?'+':'',CD,false]];
-  st.forEach(function(x,i){
-    var bx=28+i*110.5,hi=x[4];
-    b+='<rect x="'+bx+'" y="196" width="104" height="74" rx="3" fill="'+(hi?CD:CP)+'"/>';
-    b+='<text class="cnt" data-to="'+x[1]+'" data-pre="'+x[2]+'" x="'+(bx+52)+'" y="238" text-anchor="middle" font-size="'+(hi?36:31)+'" font-weight="700" fill="'+(hi?'#ffffff':x[3])+'">'+x[2]+x[1]+'</text>';
-    b+='<text x="'+(bx+52)+'" y="259" text-anchor="middle" font-size="11" font-weight="600" fill="'+(hi?'#ffffff':CM)+'" fill-opacity="'+(hi?.8:1)+'" letter-spacing="1">'+x[0].toUpperCase()+'</text>';
-  });
-  Y=300;
+  var b='',Y=0;
+  /* hlavička a statistiky ve stejném stylu jako karty bilance */
+  var H0=bilHead(n,'BILANCE HRÁČE',(no!==''?'číslo '+no+' · ':'')+filtDesc(),600);b+=H0.svg;
+  var S0=bilStats(M.all,H0.h+22,600);b+=S0.svg;
+  Y=H0.h+22+S0.h+40;
   var rs=rows.slice().sort(function(x,y){return x.dt<y.dt?-1:x.dt>y.dt?1:0});
   /* forma: posledních 15 zápasů */
   var last=rs.slice(-15),mx=3;last.forEach(function(r){if(r.p>mx)mx=r.p});
@@ -2271,20 +2256,20 @@ function cardSvg(n,rows,final,all){
   var bt=null;Object.keys(byT).forEach(function(c){var q=runs(byT[c],function(r){return r.p>0});q.c=c;q.act=q.cur>0&&q.cur===q.n;if(q.n>=2&&(!bt||q.n>bt.n||(q.n===bt.n&&q.act&&!bt.act)))bt=q});
   b+='<text x="36" y="'+Y+'" font-size="12" font-weight="700" fill="'+CM+'" letter-spacing="1.5">SÉRIE</text>';
   var dv=all.filter(function(r){return r.team&&r.team===r.a}),vv=all.filter(function(r){return r.team&&r.team!==r.a});
-  function bz(x){var q=agg(x);return q.z?(q.b/q.z).toFixed(2):'–'}
+  function bz(x){var q=agg(x);return q.z?(q.b/q.z).toFixed(2).replace('.',','):'–'}
   b+='<text x="564" y="'+Y+'" text-anchor="end" font-size="11" font-weight="700" fill="'+CM+'" letter-spacing="0.8">DOMA '+bz(dv)+'  ·  VENKU '+bz(vv)+' B/Z</text>';
   var aktN=wp.cur>0?wp.cur:(rs.length?np2.cur:0),aktBody=wp.cur>0||!rs.length;
   var bxs=[['AKTUÁLNĚ',aktN,aktBody?'zápasů s bodem v řadě':'zápasů bez bodu v řadě',aktBody?CD:CM],['NEJDELŠÍ S BODEM',wp.n,rozsah(wp),CD],['NEJDELŠÍ BEZ BODU',np2.n,rozsah(np2),CM]];
   bxs.forEach(function(x,i){
     var bx=36+i*180,by=Y+14;
-    b+='<rect x="'+bx+'" y="'+by+'" width="168" height="84" rx="3" fill="'+CP+'"/>';
+    b+='<rect x="'+bx+'" y="'+by+'" width="168" height="84" rx="8" fill="'+CP+'"/>';
     b+='<text x="'+(bx+14)+'" y="'+(by+22)+'" font-size="10" font-weight="700" fill="'+CM+'" letter-spacing="1.1">'+x[0]+'</text>';
     b+='<text class="cnt" data-to="'+x[1]+'" data-pre="" x="'+(bx+14)+'" y="'+(by+58)+'" font-size="34" font-weight="700" fill="'+x[3]+'">'+x[1]+'</text>';
     b+='<text x="'+(bx+14)+'" y="'+(by+76)+'" font-size="10.5" fill="'+CM+'">'+xe(x[2])+'</text>';
   });
   Y+=14+84+14;
   if(bt){
-    b+='<rect x="36" y="'+Y+'" width="528" height="46" rx="3" fill="'+CP+'"/>';
+    b+='<rect x="36" y="'+Y+'" width="528" height="46" rx="8" fill="'+CP+'"/>';
     b+=dotSvg(56,Y+23,8,bt.c);
     b+='<text x="74" y="'+(Y+19)+'" font-size="10" font-weight="700" fill="'+CM+'" letter-spacing="1.1">NEJDELŠÍ SÉRIE S BODEM PROTI JEDNOMU TÝMU</text>';
     b+='<text x="74" y="'+(Y+38)+'" font-size="16" font-weight="700" fill="'+CD+'">'+bt.c+' <tspan font-size="12" font-weight="400" fill="'+CM+'">'+xe(TEAMS[bt.c]||'')+(bt.act?' · série trvá':'')+'</tspan></text>';
@@ -2297,7 +2282,7 @@ function cardSvg(n,rows,final,all){
     ['b','g','z'].forEach(function(kk){var nx=mc.next[kk];if(nx.t>=100&&nx.left<=30&&(!cand||nx.left<cand.left))cand={k:kk,t:nx.t,left:nx.left,cur:mc.tot[kk]}});
     if(cand){
       var gr=milGrid(cand.k,cand.cur),prev=gr.length?gr[gr.length-1]:0,fr=Math.max(0,Math.min(1,(cand.cur-prev)/(cand.t-prev))),T=MTYPE[cand.k];
-      b+='<rect x="36" y="'+Y+'" width="528" height="68" rx="3" fill="'+CP+'"/>';
+      b+='<rect x="36" y="'+Y+'" width="528" height="68" rx="8" fill="'+CP+'"/>';
       b+='<text x="50" y="'+(Y+20)+'" font-size="10" font-weight="700" fill="'+CM+'" letter-spacing="1.1">BLÍŽÍ SE MILNÍK</text>';
       b+='<text x="50" y="'+(Y+42)+'" font-size="18" font-weight="700" fill="'+CD+'">'+cand.t+'. '+T.lbl+' <tspan font-size="12" font-weight="400" fill="'+CM+'">· teď '+cand.cur+'</tspan></text>';
       b+='<text x="550" y="'+(Y+43)+'" text-anchor="end" font-size="22" font-weight="700" fill="'+CD+'">'+cand.left+' <tspan font-size="12" font-weight="600" fill="'+CM+'">zbývá</tspan></text>';
@@ -2321,7 +2306,7 @@ function cardSvg(n,rows,final,all){
   Y=sb+36;
   /* oběť / noční můra */
   function box(x,title,it,metric){
-    b+='<rect x="'+x+'" y="'+Y+'" width="258" height="84" rx="3" fill="'+CP+'"/>';
+    b+='<rect x="'+x+'" y="'+Y+'" width="258" height="84" rx="8" fill="'+CP+'"/>';
     b+='<text x="'+(x+16)+'" y="'+(Y+22)+'" font-size="10.5" font-weight="700" fill="'+CM+'" letter-spacing="1.2">'+title+'</text>';
     if(!it){b+='<text x="'+(x+16)+'" y="'+(Y+56)+'" font-size="16" fill="'+CM+'">málo zápasů</text>';return}
     b+=dotSvg(x+25,Y+51,9,it.c);
@@ -2331,8 +2316,8 @@ function cardSvg(n,rows,final,all){
     b+='<text x="'+(x+242)+'" y="'+(Y+74)+'" text-anchor="end" font-size="11.5" fill="'+CM+'">'+metric.small+'</text>';
   }
   var be=M.best,wo=M.worst;
-  box(36,'NEJOBLÍBENĚJŠÍ SOUPEŘ',be,be&&{big:(be.t.b/be.t.z).toFixed(2)+' b/z',small:be.t.b+' b v '+be.t.z+' z.'});
-  box(306,'NOČNÍ MŮRA',wo,wo&&{big:(wo.t.pm>0?'+':'')+wo.t.pm+' +/-',small:wo.t.b+' b v '+wo.t.z+' z.'});
+  box(36,'NEJOBLÍBENĚJŠÍ SOUPEŘ',be,be&&{big:(be.t.b/be.t.z).toFixed(2).replace('.',',')+' b/z',small:be.t.b+' b v '+be.t.z+' z.'});
+  box(306,'NOČNÍ MŮRA',wo,wo&&{big:bPmT(wo.t.pm)+' +/−',small:wo.t.b+' b v '+wo.t.z+' z.'});
   Y+=84+30;
   b+='<text x="300" y="'+Y+'" text-anchor="middle" font-size="11" fill="#9ba3b4">Extraliga vč. play off · soupeř/můra = min. 3 zápasy · data hokej.cz</text>';
   var H=Y+22;
@@ -2398,9 +2383,9 @@ function bilLayout(W){
   return W>500?{m:36,rh:37,dot:54,code:76,name:122,nameMax:22,fs:15,cx:{z:312,g:354,a:396,b:444,bz:498,pm:548}}
               :{m:24,rh:40,dot:38,code:54,name:90,nameMax:16,fs:14,nfs:11.5,cx:{z:240,g:276,a:312,b:354,bz:402,pm:442}};
 }
+function bilZebra(b,L,W,y0,n){for(var i=0;i<n;i+=2)b+=bR(L.m,y0+i*L.rh,W-2*L.m,L.rh,BZ);return b}
 function bilBand(b,L,y0,n,W){return b+bR(L.cx.b-(W>500?30:24),y0,(W>500?42:34),n*L.rh,BR).replace('fill="'+BR+'"','fill="'+BR+'" fill-opacity=".07"')}
 function bilRow(b,L,W,y,i,label,t,opt){
-  if(i%2===0)b+=bR(L.m,y,W-2*L.m,L.rh,BZ);
   var ty=y+L.rh/2+5;
   if(opt.dot){
     b+=dotSvg(L.dot,y+L.rh/2,W>500?8:7.5,opt.dot);
@@ -2429,7 +2414,7 @@ function bilTeamsSvg(n,rows,mobile){
   var H0=bilHead(n,'BILANCE PROTI TÝMŮM',filtDesc(),W),b=H0.svg,Y=H0.h+22;
   var S0=bilStats(tot,Y,W);b+=S0.svg;Y+=S0.h+28;
   var yh=Y+18;b+=bilCols(yh,{x:L.m+(W>500?18:14),t:'SOUPEŘ'},L.cx,W);Y=yh+14;
-  b=bilBand(b,L,Y,list.length,W);
+  b=bilZebra(b,L,W,Y,list.length);b=bilBand(b,L,Y,list.length,W);
   var mx=list.reduce(function(m,x){return Math.max(m,x.t.b)},0);
   list.forEach(function(x,i){b=bilRow(b,L,W,Y+i*L.rh,i,x.c,x.t,{dot:x.c,hi:x.t.b>0&&x.t.b===mx})});
   Y+=list.length*L.rh;
@@ -2449,7 +2434,7 @@ function bilOppSvg(n,c){
   var by={};rs.forEach(function(r){(by[r.season]=by[r.season]||[]).push(r)});
   var sv=Object.keys(by).map(Number).sort(function(a,b){return b-a}),cut=sv.length>12;sv=sv.slice(0,12);
   var yh=Y+18;b+=bilCols(yh,{x:L.m+18,t:'SEZÓNA'},L.cx,W);Y=yh+14;
-  b=bilBand(b,L,Y,sv.length,W);
+  b=bilZebra(b,L,W,Y,sv.length);b=bilBand(b,L,Y,sv.length,W);
   var mx=sv.reduce(function(m,k){return Math.max(m,agg(by[k]).b)},0);
   sv.forEach(function(k,i){var t=agg(by[k]);b=bilRow(b,L,W,Y+i*L.rh,i,seasonLabel(k),t,{hi:t.b>0&&t.b===mx})});
   Y+=sv.length*L.rh;
