@@ -2436,13 +2436,13 @@ function dotSvg(cx,cy,r,c){
     p0=[cx+r*Math.cos(s0),cy+r*Math.sin(s0)];p1=[cx+r*Math.cos(s1),cy+r*Math.sin(s1)];
     o+='<path d="M'+cx+','+cy+' L'+p0[0].toFixed(2)+','+p0[1].toFixed(2)+' A'+r+','+r+' 0 '+(k===2?0:0)+' 1 '+p1[0].toFixed(2)+','+p1[1].toFixed(2)+' Z" fill="'+a[i]+'"/>';
   }
-  return o+'<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="#1d2740" stroke-opacity=".4" stroke-width="1"/>';
+  return o+'<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="#0b0d12" stroke-opacity=".4" stroke-width="1"/>';
 }
 function cardSvg(n,rows,final,all){
   all=all||rows;
-  var CB='#1f5fa8',CA='#c76400',CD='#1d2740',CM='#5b6478',CP='#eef0f4';
+  var CB='#2563eb',CA='#ea580c',CD='#0b0d12',CM='#6b7385',CP='#f6f7f9';
   var M=cardModel(n,rows),np=nameParts(n),sur=np.sur,first=np.first,no=CISLA[n]!=null?CISLA[n]:'',club=KLUB[n]||'';
-  var F='font-family="IBM Plex Sans,Segoe UI,Helvetica,Arial,sans-serif"';
+  var F='font-family="Inter Variable,Inter,IBM Plex Sans,Segoe UI,Helvetica,Arial,sans-serif"';
   var b='',Y=0;
   /* hlavička a statistiky ve stejném stylu jako karty bilance */
   var H0=bilHead(n,'BILANCE HRÁČE',(no!==''?'číslo '+no+' · ':'')+filtDesc(),600);b+=H0.svg;
@@ -2504,7 +2504,7 @@ function cardSvg(n,rows,final,all){
       b+='<text x="50" y="'+(Y+20)+'" font-size="10" font-weight="700" fill="'+CM+'" letter-spacing="1.1">BLÍŽÍ SE MILNÍK</text>';
       b+='<text x="50" y="'+(Y+42)+'" font-size="18" font-weight="700" fill="'+CD+'">'+cand.t+'. '+T.lbl+' <tspan font-size="12" font-weight="400" fill="'+CM+'">· teď '+cand.cur+'</tspan></text>';
       b+='<text x="550" y="'+(Y+43)+'" text-anchor="end" font-size="22" font-weight="700" fill="'+CD+'">'+cand.left+' <tspan font-size="12" font-weight="600" fill="'+CM+'">zbývá</tspan></text>';
-      b+='<rect x="50" y="'+(Y+52)+'" width="500" height="6" rx="3" fill="#dfe2e6"/><rect x="50" y="'+(Y+52)+'" width="'+(500*fr).toFixed(1)+'" height="6" rx="3" fill="'+CD+'"/>';
+      b+='<rect x="50" y="'+(Y+52)+'" width="500" height="6" rx="3" fill="#e8eaee"/><rect x="50" y="'+(Y+52)+'" width="'+(500*fr).toFixed(1)+'" height="6" rx="3" fill="'+CD+'"/>';
       Y+=68+14;
     }
   }catch(e){}
@@ -2554,8 +2554,8 @@ function zoomCard(n,rows,all){
 }
 /* ====== karty bilance k exportu: proti všem týmům / proti jednomu soupeři ====== */
 var BIL={opp:''},BILKEY='';
-var BF='font-family="IBM Plex Sans,Segoe UI,Helvetica,Arial,sans-serif" style="font-variant-numeric:tabular-nums"';
-var BN='#1d2740',BM='#5b6478',BL='#e4e8ef',BZ='#f5f6f9',BG='#1f5fa8',BA='#c76400',BR='#c8262b',BPOS='#15803d',BNEG='#c8102e';
+var BF='font-family="Inter Variable,Inter,IBM Plex Sans,Segoe UI,Helvetica,Arial,sans-serif" style="font-variant-numeric:tabular-nums"';
+var BN='#0b0d12',BM='#6b7385',BL='#e8eaee',BZ='#f6f7f9',BG='#2563eb',BA='#ea580c',BR='#4f46e5',BPOS='#059669',BNEG='#e11d48';
 function bT(x,y,t,o){o=o||{};return '<text x="'+x+'" y="'+y+'"'+(o.a?' text-anchor="'+o.a+'"':'')+' font-size="'+(o.s||13)+'"'+(o.w?' font-weight="'+o.w+'"':'')+' fill="'+(o.c||BN)+'"'+(o.ls?' letter-spacing="'+o.ls+'"':'')+(o.op?' fill-opacity="'+o.op+'"':'')+'>'+t+'</text>'}
 function bR(x,y,w,h,f,rx){return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'"'+(rx?' rx="'+rx+'"':'')+'/>'}
 function bPmT(v){return v>0?'+'+v:v<0?'−'+(-v):'0'}
@@ -2564,7 +2564,7 @@ function bilWrap(b,H,W){W=W||600;return '<svg xmlns="http://www.w3.org/2000/svg"
 /* hlavička s jemným motivem ledu (kruh vhazování, stopy bruslí) */
 function bilHead(n,label,sub,W){
   W=W||600;var np=nameParts(n),sur=np.sur,H=W>500?178:164,m=W>500?36:24;
-  var s=bR(0,0,W,H,BN);
+  var s='<defs><radialGradient id="hg" cx="85%" cy="0%" r="90%"><stop offset="0" stop-color="#818cf8" stop-opacity=".42"/><stop offset="1" stop-color="#818cf8" stop-opacity="0"/></radialGradient></defs>'+bR(0,0,W,H,BN)+bR(0,0,W,H,'url(#hg)');
   s+='<g fill="none" stroke="#ffffff" stroke-linecap="round">'
     +'<circle cx="'+(W-78)+'" cy="'+(H/2+6)+'" r="84" stroke-opacity=".07" stroke-width="2"/>'
     +'<circle cx="'+(W-78)+'" cy="'+(H/2+6)+'" r="5" fill="#ffffff" fill-opacity=".07" stroke="none"/>'
@@ -2573,26 +2573,26 @@ function bilHead(n,label,sub,W){
     +'<path d="M'+(W-330)+','+(H+8)+' C'+(W-250)+','+(H-84)+' '+(W-150)+','+(H-26)+' '+(W-40)+','+(H-150)+'" stroke-opacity=".04" stroke-width="1.5"/></g>';
   s+=bT(m,40,xe(label),{s:12.5,w:700,c:'#ffffff',op:.85,ls:2});
   var full=(np.first?np.first+' ':'')+sur,fl=full.length,fz=W>500?(fl<=13?56:fl<=17?48:fl<=22?40:34):(fl<=13?46:fl<=17?38:fl<=22?32:27);
-  s+='<text x="'+m+'" y="'+(W>500?100:92)+'" font-size="'+fz+'" font-weight="700" fill="#ffffff">'+(np.first?'<tspan font-weight="400" fill-opacity=".9">'+xe(np.first)+' </tspan>':'')+xe(sur)+'</text>';
+  s+='<text x="'+m+'" y="'+(W>500?100:92)+'" font-size="'+fz+'" font-weight="800" letter-spacing="-1.2" fill="#ffffff">'+(np.first?'<tspan font-weight="400" fill-opacity=".9">'+xe(np.first)+' </tspan>':'')+xe(sur)+'</text>';
   var kc=KLUB[n]||'',pre=kc?kc+' · '+(TEAMS[kc]||kc)+' · ':'';
   s+=bT(m,H-30,xe(pre+sub),{s:W>500?14.5:13,c:'#ffffff',op:.85});
-  s+=bR(0,H-3,W,3,'#9db7d5');
+  s+=bR(0,H-3,W,3,'#818cf8');
   return {svg:s,h:H};
 }
 /* jednotný blok pěti statistik */
 function bilStats(t,y,W){
-  W=W||600;var m=W>500?36:24,tw=W-2*m,h=W>500?88:80,wts=[1,1,1,1.35,1],sum=5.35,x=m,s=bR(m,y,tw,h,'#eef0f4',8);
+  W=W||600;var m=W>500?36:24,tw=W-2*m,h=W>500?88:80,wts=[1,1,1,1.35,1],sum=5.35,x=m,s=bR(m,y,tw,h,'#f6f7f9',12)+'<rect x="'+(m+.5)+'" y="'+(y+.5)+'" width="'+(tw-1)+'" height="'+(h-1)+'" rx="12" fill="none" stroke="#e8eaee"/>';
   [['ZÁPASY',t.z,BN],['GÓLY',t.g,BG],['ASISTENCE',t.a,BA],['BODY',t.b,BR],['+/−',t.pm,BN]].forEach(function(c,i){
     var cw=tw*wts[i]/sum,cx=x+cw/2,v=c[0]==='+/−'?(t.pm>0?'+'+t.pm:bPmT(t.pm)):String(c[1]);
     if(i===3)s+=bR(x,y,cw,h,'#ffffff')+bR(x,y,cw,3,BR);
-    if(i>0&&i!==3&&i!==4)s+=bR(x,y+14,1,h-28,'#d5dae3');
-    s+=bT(cx,y+(W>500?52:48),v,{s:i===3?(W>500?42:38):(W>500?33:29),w:700,c:c[2],a:'middle'});
+    if(i>0&&i!==3&&i!==4)s+=bR(x,y+14,1,h-28,'#e8eaee');
+    s+=bT(cx,y+(W>500?52:48),v,{s:i===3?(W>500?44:40):(W>500?33:29),w:800,c:c[2],a:'middle'});
     s+=bT(cx,y+h-14,c[0],{s:W>500?10.5:9.5,w:600,c:BM,a:'middle',ls:1.4});
     x+=cw});
   return {svg:s,h:h};
 }
 function bilCols(y,first,cx,W){
-  var m=W>500?36:24,s=bR(m,y-18,W-2*m,28,'#e8ecf3',4);
+  var m=W>500?36:24,s=bR(m,y-18,W-2*m,28,'#f0f1f4',4);
   s+=bT(first.x,y,first.t,{s:10.5,w:600,c:BM,ls:1.5});
   [['Z',cx.z,BM],['G',cx.g,BG],['A',cx.a,BA],['B',cx.b,BN],['B/Z',cx.bz,BM],['+/−',cx.pm,BM]].forEach(function(c){s+=bT(c[1],y,c[0],{s:10.5,w:700,c:c[2],a:'end',ls:1})});
   return s;
@@ -2623,7 +2623,7 @@ function bilTotal(b,L,W,y,tot,nodot){
   b+=bT(c.z,ty,tot.z,{s:f,w:700,a:'end'})+bT(c.g,ty,tot.g,{s:f,w:700,a:'end',c:BG})+bT(c.a,ty,tot.a,{s:f,w:700,a:'end',c:BA})+bT(c.b,ty,tot.b,{s:f+1,w:700,a:'end'})+bT(c.bz,ty,bBz(tot),{s:f-1,w:700,a:'end',c:BM})+bT(c.pm,ty,bPmT(tot.pm),{s:f-1,w:700,a:'end',c:tot.pm>0?BPOS:tot.pm<0?BNEG:BM});
   return b;
 }
-function bilFoot(y,W,txt){return bT(W/2,y,xe(txt),{s:11.5,c:'#7b8394',a:'middle'})}
+function bilFoot(y,W,txt){return bT(W/2,y,xe(txt),{s:11.5,c:'#8a91a1',a:'middle'})}
 /* karta 1: proti všem týmům (mobile = užší varianta pro telefon) */
 function bilTeamsSvg(n,rows,mobile){
   var W=mobile?480:600,L=bilLayout(W),g={},tot=agg(rows);
@@ -2736,7 +2736,7 @@ function animateCard(el){
 }
 function savePng(n,rows,all){savePngSvg(cardSvg(n,rows,true,all),'bilance-'+ascii(n))}
 function savePngSvg(svg,fname){
-  var fe=document.getElementById('fonts');if(fe)svg=svg.replace(/(<svg[^>]*>)/,'$1<style>'+fe.textContent+'</style>');
+  var fe=document.getElementById('fonts'),fu=document.getElementById('fontsUI');if(fe)svg=svg.replace(/(<svg[^>]*>)/,'$1<style>'+fe.textContent+(fu?fu.textContent:'')+'</style>');
   var img=new Image(),vb=svg.match(/viewBox="0 0 (\d+) (\d+)"/),W=+vb[1]*2,H=+vb[2]*2;
   img.onload=function(){
     var cv=document.createElement('canvas');cv.width=W;cv.height=H;var ctx=cv.getContext('2d');
