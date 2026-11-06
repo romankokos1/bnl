@@ -912,7 +912,24 @@ function rngDesc(){
   return a&&b?(a===b?a+'. kolo':a+'.–'+b+'. kolo'):a?'od '+a+'. kola':'do '+b+'. kola';
 }
 function whereOk(r){var k=$('kde').value;if(!k)return true;if(!r.team)return false;var home=r.team===r.a;return k==='D'?home:!home}
-function clubOk(r){var k=$('club').value;return !k||(k==='H'?r.mine:!r.mine)}
+
+function clubDesc(k){return k==='H'?'za současný klub':k==='X'?'za jiný klub':(k&&k.indexOf('T:')===0)?'za '+(TEAMS[k.slice(2)]||k.slice(2)):'za libovolný klub'}
+function clubFill(){
+  var sel=$('club'),cur=sel.value,n=$('player').value,h='<option value="">Kdekoli</option>';clubFill.n=n;
+  var rows=(n&&EMB[n])?INFR(n):null,home=n?KLUB[n]:'';
+  if(rows&&home){
+    var by={};rows.forEach(function(r){if(r.mine||!r.team)return;var o=by[r.team]||(by[r.team]={t:r.team,ss:{},z:0});o.ss[r.season]=1;o.z++});
+    var list=Object.keys(by).map(function(k){var o=by[k];o.sl=Object.keys(o.ss).map(Number).sort();return o}).sort(function(a,b){return b.sl[b.sl.length-1]-a.sl[a.sl.length-1]||b.z-a.z});
+    h+='<option value="H">Současný klub · '+escH(TEAMS[home]||home)+'</option>';
+    if(list.length){
+      h+='<option value="X">Jiný klub · všechny</option><optgroup label="Jiný klub">'+list.map(function(o){return '<option value="T:'+o.t+'">'+escH(TEAMS[o.t]||o.t)+' ('+seasonsTxt(o.sl)+')</option>'}).join('')+'</optgroup>';
+    }else h+='<option value="X">Jiný klub</option>';
+  }else h+='<option value="H">Současný klub</option><option value="X">Jiný klub</option>';
+  sel.innerHTML=h;
+  var ok=Array.prototype.some.call(sel.options,function(o){return o.value===cur});
+  sel.value=ok?cur:'';
+}
+function clubOk(r){var k=$('club').value;return !k||(k==='H'?r.mine:k==='X'?!r.mine:k.indexOf('T:')===0?r.team===k.slice(2):!r.mine)}
 function filt(n,noWhere){
   var rows=INFR(n);
   var s=$('season').value,c=$('comp').value;
@@ -971,6 +988,7 @@ function splitHtml(rows){
   return box('Doma',dom)+box('Venku',ven);
 }
 function render(){
+  if(clubFill.n!==$('player').value)clubFill();
   setView();
   if(mode==='Z'){try{renderZ()}catch(e){console.error(e)}$('rekordy').style.display='none';$('mil').style.display='none';return}
   if(mode==='S'){try{renderS()}catch(e){console.error(e)}$('rekordy').style.display='none';$('mil').style.display='none';return}
@@ -2351,7 +2369,7 @@ function axisTeams(){
 }
 function filtDesc(){
   var s=$('season').value,c=$('comp').value,k=$('club').value;
-  return [s?seasonLabel(s):'všechny sezóny',c||'všechny soutěže',rngDesc(),k==='H'?'za současný klub':k==='X'?'za jiný klub':'za libovolný klub'].filter(Boolean).join(' · ');
+  return [s?seasonLabel(s):'všechny sezóny',c||'všechny soutěže',rngDesc(),clubDesc(k)].filter(Boolean).join(' · ');
 }
 
 /* ====== heatmapa hráč × soupeř ====== */
