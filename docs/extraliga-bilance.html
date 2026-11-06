@@ -914,16 +914,19 @@ function rngDesc(){
 function whereOk(r){var k=$('kde').value;if(!k)return true;if(!r.team)return false;var home=r.team===r.a;return k==='D'?home:!home}
 
 function clubDesc(k){return k==='H'?'za současný klub':k==='X'?'za jiný klub':(k&&k.indexOf('T:')===0)?'za '+(TEAMS[k.slice(2)]||k.slice(2)):'za libovolný klub'}
+function clubCtx(){var g=mode==='G',n=g?(GS.who||''):$('player').value,rows=null,home='';
+  try{if(g){if(n&&EMBG[n]){rows=INFG(n);home=KLUBG[n]}}else if(n&&EMB[n]){rows=INFR(n);home=KLUB[n]}}catch(e){}
+  return {n:n,rows:rows,home:home,key:(g?'G:':'P:')+n+'|'+(rows?rows.length:0)}}
+function clubSync(){if(clubFill.key!==clubCtx().key)clubFill()}
 function clubFill(){
-  var sel=$('club'),cur=sel.value,n=$('player').value,h='<option value="">Kdekoli</option>';clubFill.n=n;
-  var rows=(n&&EMB[n])?INFR(n):null,home=n?KLUB[n]:'';
+  var sel=$('club'),cur=sel.value,c=clubCtx(),rows=c.rows,home=c.home,h='<option value="">Kdekoli</option>';clubFill.key=c.key;
   if(rows&&home){
-    var by={};rows.forEach(function(r){if(r.mine||!r.team)return;var o=by[r.team]||(by[r.team]={t:r.team,ss:{},z:0});o.ss[r.season]=1;o.z++});
-    var list=Object.keys(by).map(function(k){var o=by[k];o.sl=Object.keys(o.ss).map(Number).sort();return o}).sort(function(a,b){return b.sl[b.sl.length-1]-a.sl[a.sl.length-1]||b.z-a.z});
-    h+='<option value="H">Současný klub · '+escH(TEAMS[home]||home)+'</option>';
-    if(list.length){
-      h+='<option value="X">Jiný klub · všechny</option><optgroup label="Jiný klub">'+list.map(function(o){return '<option value="T:'+o.t+'">'+escH(TEAMS[o.t]||o.t)+' ('+seasonsTxt(o.sl)+')</option>'}).join('')+'</optgroup>';
-    }else h+='<option value="X">Jiný klub</option>';
+    var hn=TEAMS[home]||home,by={};
+    rows.forEach(function(r){var t=r.team;if(r.mine||!t||t===home||(TEAMS[t]||t)===hn)return;var o=by[t]||(by[t]={t:t,ss:{},z:0,sure:0});o.ss[r.season]=1;o.z++;if(!r.odhad)o.sure++});
+    var list=Object.keys(by).map(function(k){var o=by[k];o.sl=Object.keys(o.ss).map(Number).sort();return o}).filter(function(o){return o.sure>0}).sort(function(a,b){return b.sl[b.sl.length-1]-a.sl[a.sl.length-1]||b.z-a.z});
+    h+='<option value="H">Současný klub · '+escH(hn)+'</option>';
+    if(list.length)h+='<option value="X">Jiný klub · všechny</option><optgroup label="Jiný klub">'+list.map(function(o){return '<option value="T:'+o.t+'">'+escH(TEAMS[o.t]||o.t)+' · '+seasonsTxt(o.sl)+' · '+o.z+' z.</option>'}).join('')+'</optgroup>';
+    else h+='<option value="X">Jiný klub</option>';
   }else h+='<option value="H">Současný klub</option><option value="X">Jiný klub</option>';
   sel.innerHTML=h;
   var ok=Array.prototype.some.call(sel.options,function(o){return o.value===cur});
@@ -988,7 +991,7 @@ function splitHtml(rows){
   return box('Doma',dom)+box('Venku',ven);
 }
 function render(){
-  if(clubFill.n!==$('player').value)clubFill();
+  clubSync();
   setView();
   if(mode==='Z'){try{renderZ()}catch(e){console.error(e)}$('rekordy').style.display='none';$('mil').style.display='none';return}
   if(mode==='S'){try{renderS()}catch(e){console.error(e)}$('rekordy').style.display='none';$('mil').style.display='none';return}
@@ -1212,11 +1215,13 @@ function gTiles(t){
   return '<div class="tiles">'+tl(t.z,'Zápasů')+tl(Math.round(t.min),'Minut')+tl(t.sh?pc(t.svp)+' %':'–','Úspěšnost')+tl(t.min?dc(t.gaa):'–','GAA')+tl(t.so,'Nuly')+'</div>';
 }
 function renderG(){
+  clubSync();
   var el=$('gcard'),names=gNames();
   if(!names.length){el.innerHTML='<h2>Brankáři</h2><p class="muted">Pro tento výběr nejsou data brankářů. Brankáře ukládá až aktuální import — nahraj soubory ze stahovátka znovu.</p>';return}
   var teams={};names.forEach(function(n){INFG(n).forEach(function(r){var o=opp(r);if(o)teams[o]=1})});
   var tl=Object.keys(teams).sort(function(a,b){return teamName(a)<teamName(b)?-1:1});
   if(names.indexOf(GS.who)<0)GS.who=names[0];
+  clubSync();
   if(tl.indexOf(GS.opp)<0)GS.opp=tl[0]||'';
   var h='<h2>Brankáři — bilance proti týmům</h2><div class="seg sub"><button type="button" id="gvB" class="'+(GS.view==='B'?'on':'')+'">Podle brankáře</button><button type="button" id="gvS" class="'+(GS.view==='S'?'on':'')+'">Podle soupeře</button></div>';
   var note='<p class="small muted">Úsp. % = zákroky / (zákroky + obdržené góly), GAA = obdržené góly na 60 minut, SO = zápas bez obdrženého gólu při odchytání aspoň 55 minut. V–P je výsledek týmu v zápase, ve kterém chytal. Filtry sezóna, soutěž, „hráč za“ a doma/venku platí i tady.</p>';
