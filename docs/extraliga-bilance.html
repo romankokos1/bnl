@@ -588,6 +588,9 @@ table.hm tr.sumrow td, table.hm td.tot { background: var(--surf2); }
 @media (max-width: 900px) { .fxcols { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .fx { grid-template-columns: 1fr 20px; } .fx .fd { grid-column: 1 / -1; } .fx .fm { grid-column: 1; } .fx .fc { grid-column: 2; grid-row: 2; } }
 
+input[type=date] { background: var(--surf); border: 1px solid var(--hair); border-radius: 9px; padding: 7px 10px; color: var(--ink); font: inherit; font-size: .9rem; min-width: 0; width: 100%; box-sizing: border-box; color-scheme: light; }
+:root[data-theme="dark"] input[type=date] { background: var(--surf2); color-scheme: dark; }
+
 </style>
 </head>
 <body>
@@ -635,6 +638,14 @@ table.hm tr.sumrow td, table.hm td.tot { background: var(--surf2); }
       <div>
         <label for="kTo">Do kola</label>
         <select id="kTo"></select>
+      </div>
+      <div>
+        <label for="dFrom">Datum od</label>
+        <input type="date" id="dFrom">
+      </div>
+      <div>
+        <label for="dTo">Datum do</label>
+        <input type="date" id="dTo">
       </div>
       <div>
         <label for="club">Hráč za</label>
@@ -814,7 +825,7 @@ $('tabH').onclick=function(){setMode('H')};
 $('tabG').onclick=function(){setMode('G')};
 $('tabS').onclick=function(){setMode('S')};
 $('tabZ').onclick=function(){setMode('Z')};
-['player','opp','season','comp','club','kde','kFrom','kTo'].forEach(function(i){$(i).onchange=function(){if(i==='season')rngFill();if(i==='kFrom'||i==='kTo'){var a=+$('kFrom').value,b=+$('kTo').value;if(a&&b&&a>b){if(i==='kFrom')$('kTo').value=$('kFrom').value;else $('kFrom').value=$('kTo').value}}render();if(i==='club'||i==='kde'){pristiHtml();rekordyHtml(true)}}});
+['player','opp','season','comp','club','kde','kFrom','kTo','dFrom','dTo'].forEach(function(i){$(i).onchange=function(){if(i==='season')rngFill();if(i==='dFrom'||i==='dTo'){var f=$('dFrom').value,u=$('dTo').value;if(f&&u&&f>u){if(i==='dFrom')$('dTo').value=f;else $('dFrom').value=u}}if(i==='kFrom'||i==='kTo'){var a=+$('kFrom').value,b=+$('kTo').value;if(a&&b&&a>b){if(i==='kFrom')$('kTo').value=$('kFrom').value;else $('kFrom').value=$('kTo').value}}render();if(i==='club'||i==='kde'){pristiHtml();rekordyHtml(true)}}});
 
 function fill(sel,vals,keep,all){
   var h=(all?'<option value="">'+all+'</option>':'')+vals.map(function(v){return '<option value="'+v+'">'+(sel.id==='opp'?teamName(v):v)+'</option>'}).join('');
@@ -888,9 +899,12 @@ function refresh(sel){
   render();
 }
 function kNum(r){var k=parseInt(String(r.kolo||'').replace(/\.$/,''),10);return k>0?k:0}
-function rngOn(){return !!($('kFrom').value||$('kTo').value)}
+function kolaOn(){return !!($('kFrom').value||$('kTo').value)}
+function dateOn(){return !!($('dFrom').value||$('dTo').value)}
+function rngOn(){return kolaOn()||dateOn()}
 function inRng(r){
-  if(!rngOn())return true;
+  if(dateOn()){var d=String(r.dt||'').slice(0,10),f=$('dFrom').value,u=$('dTo').value;if((f&&d<f)||(u&&d>u))return false}
+  if(!kolaOn())return true;
   if(r.comp!=='Základní část')return false;
   var k=kNum(r);if(!k)return false;
   var a=+$('kFrom').value||1,b=+$('kTo').value||999;
@@ -907,9 +921,10 @@ function rngFill(){
   if(a&&b&&a>b){$('kTo').value=fa;}
 }
 function rngDesc(){
-  if(!rngOn())return '';
-  var a=$('kFrom').value,b=$('kTo').value;
-  return a&&b?(a===b?a+'. kolo':a+'.–'+b+'. kolo'):a?'od '+a+'. kola':'do '+b+'. kola';
+  var o=[];
+  if(kolaOn()){var a=$('kFrom').value,b=$('kTo').value;o.push(a&&b?(a===b?a+'. kolo':a+'.–'+b+'. kolo'):a?'od '+a+'. kola':'do '+b+'. kola')}
+  if(dateOn()){var f=$('dFrom').value,u=$('dTo').value;o.push(f&&u?(f===u?fdate(f):fdate(f)+' – '+fdate(u)):f?'od '+fdate(f):'do '+fdate(u))}
+  return o.join(' · ');
 }
 function whereOk(r){var k=$('kde').value;if(!k)return true;if(!r.team)return false;var home=r.team===r.a;return k==='D'?home:!home}
 
@@ -963,7 +978,7 @@ function nameplate(num,big,small){return '<div class="sbn"><b>'+big+'</b>'+(smal
 function tile(v,l){return '<div class="tile"><b>'+v+'</b><span>'+l+'</span></div>'}
 
 function fltrSum(){
-  var on=['season','comp','club','kde','kFrom','kTo'].some(function(i){return $(i).value});$('fltrSum').className=on?'on':'';
+  var on=['season','comp','club','kde','kFrom','kTo','dFrom','dTo'].some(function(i){return $(i).value});$('fltrSum').className=on?'on':'';
   var n=['season','comp','club','kde'].filter(function(i){return $(i).value}).length+(rngOn()?1:0);
   $('fltrSum').innerHTML='Filtry'+(n?' <span class="badge">'+n+' aktivní</span>':': žádné');
 }
@@ -971,7 +986,7 @@ try{$('fltr').open=window.innerWidth>=700}catch(e){}
 function setView(){
   var H=mode==='H'||mode==='G'||mode==='S'||mode==='Z';
   $('split').style.display=H?'none':'';
-  Array.prototype.forEach.call(document.querySelectorAll('.filters > div, .fgrid > div'),function(d){d.style.display=(mode==='Z'||mode==='S'&&!d.querySelector(SS.tool==='O'?'#klub,#comp,#season,#kFrom,#kTo':'KTVPXWNYR'.indexOf(SS.tool)>-1?'#nic':'MD'.indexOf(SS.tool)>-1?'#klub,#comp':'#klub,#comp,#kFrom,#kTo'))?'none':''});
+  Array.prototype.forEach.call(document.querySelectorAll('.filters > div, .fgrid > div'),function(d){d.style.display=(mode==='Z'||mode==='S'&&!d.querySelector(SS.tool==='O'?'#klub,#comp,#season,#kFrom,#kTo,#dFrom,#dTo':'KTVPXWNYR'.indexOf(SS.tool)>-1?'#nic':'MD'.indexOf(SS.tool)>-1?'#klub,#comp':'#klub,#comp,#kFrom,#kTo,#dFrom,#dTo'))?'none':''});
   $('linkBtn').style.display=$('linkSolo').style.display=mode==='P'?'':'none';
   document.querySelector('.f-main').style.display=(H||pick==='tiles')?'none':'';
   $('fltr').style.display=(mode==='Z'||mode==='S'&&'KTVPXWNYR'.indexOf(SS.tool)>-1)?'none':'';
@@ -2831,7 +2846,7 @@ function pcardHtml(n,rows){
   var all=prowAll;
   var el=$('pcard');
   if(!n||!rows){el.innerHTML='';return}
-  var key=[n,$('season').value,$('comp').value,$('kFrom').value,$('kTo').value,$('club').value,$('kde').value,rows.length,all.length].join('|');
+  var key=[n,$('season').value,$('comp').value,$('kFrom').value,$('kTo').value,$('dFrom').value,$('dTo').value,$('club').value,$('kde').value,rows.length,all.length].join('|');
   if(key===PCKEY&&el.innerHTML)return;
   PCKEY=key;
   el.innerHTML='<div class="pc-wrap">'+cardSvg(n,rows,false,all)+'<div class="row" style="margin:0"><button class="btn" id="pcPng" type="button">Stáhnout kartu (PNG)</button></div></div>';
