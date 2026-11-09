@@ -591,6 +591,11 @@ table.hm tr.sumrow td, table.hm td.tot { background: var(--surf2); }
 input[type=date] { background: var(--surf); border: 1px solid var(--hair); border-radius: 9px; padding: 7px 10px; color: var(--ink); font: inherit; font-size: .9rem; min-width: 0; width: 100%; box-sizing: border-box; color-scheme: light; }
 :root[data-theme="dark"] input[type=date] { background: var(--surf2); color-scheme: dark; }
 
+.presets { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.presets button { border: 1px solid var(--hair); background: var(--surf); color: var(--ink2); border-radius: 999px; padding: 4px 12px; font: 500 .78rem var(--f-ui); cursor: pointer; }
+.presets button:hover { background: var(--surf2); color: var(--ink); }
+.presets button.off { color: var(--mut); margin-left: auto; }
+
 </style>
 </head>
 <body>
@@ -646,6 +651,12 @@ input[type=date] { background: var(--surf); border: 1px solid var(--hair); borde
       <div>
         <label for="dTo">Datum do</label>
         <input type="date" id="dTo">
+      </div>
+      <div class="presets" id="presets">
+        <button type="button" data-p="30">Posledních 30 dní</button>
+        <button type="button" data-p="M">Poslední celý měsíc</button>
+        <button type="button" data-p="S">Od začátku sezóny</button>
+        <button type="button" data-p="0" class="off">Vypnout období</button>
       </div>
       <div>
         <label for="club">Hráč za</label>
@@ -825,6 +836,7 @@ $('tabH').onclick=function(){setMode('H')};
 $('tabG').onclick=function(){setMode('G')};
 $('tabS').onclick=function(){setMode('S')};
 $('tabZ').onclick=function(){setMode('Z')};
+presetBind();
 ['player','opp','season','comp','club','kde','kFrom','kTo','dFrom','dTo'].forEach(function(i){$(i).onchange=function(){if(i==='season')rngFill();if(i==='dFrom'||i==='dTo'){var f=$('dFrom').value,u=$('dTo').value;if(f&&u&&f>u){if(i==='dFrom')$('dTo').value=f;else $('dFrom').value=u}}if(i==='kFrom'||i==='kTo'){var a=+$('kFrom').value,b=+$('kTo').value;if(a&&b&&a>b){if(i==='kFrom')$('kTo').value=$('kFrom').value;else $('kFrom').value=$('kTo').value}}render();if(i==='club'||i==='kde'){pristiHtml();rekordyHtml(true)}}});
 
 function fill(sel,vals,keep,all){
@@ -925,6 +937,19 @@ function rngDesc(){
   if(kolaOn()){var a=$('kFrom').value,b=$('kTo').value;o.push(a&&b?(a===b?a+'. kolo':a+'.–'+b+'. kolo'):a?'od '+a+'. kola':'do '+b+'. kola')}
   if(dateOn()){var f=$('dFrom').value,u=$('dTo').value;o.push(f&&u?(f===u?fdate(f):fdate(f)+' – '+fdate(u)):f?'od '+fdate(f):'do '+fdate(u))}
   return o.join(' · ');
+}
+function isoD(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function presetBind(){
+  Array.prototype.forEach.call(document.querySelectorAll('#presets button'),function(b){
+    b.onclick=function(){
+      var p=b.getAttribute('data-p'),now=new Date(),f='',u='';
+      if(p==='30'){var s=new Date(now.getFullYear(),now.getMonth(),now.getDate()-30);f=isoD(s);u=isoD(now)}
+      else if(p==='M'){f=isoD(new Date(now.getFullYear(),now.getMonth()-1,1));u=isoD(new Date(now.getFullYear(),now.getMonth(),0))}
+      else if(p==='S'){var mn='';Object.keys(EMB).forEach(function(n){EMB[n].forEach(function(r){if(r.season===CUR&&(!mn||r.dt<mn))mn=r.dt})});f=String(mn).slice(0,10)}
+      $('kFrom').value='';$('kTo').value='';$('dFrom').value=f;$('dTo').value=u;
+      render();
+    };
+  });
 }
 function whereOk(r){var k=$('kde').value;if(!k)return true;if(!r.team)return false;var home=r.team===r.a;return k==='D'?home:!home}
 
