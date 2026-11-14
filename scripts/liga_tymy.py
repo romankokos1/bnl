@@ -46,6 +46,30 @@ def je_brankar(rows: list) -> bool:
     return sum(1 for r in rows if r[8] >= 10) / len(rows) > 0.3
 
 
+def _norm(s: str) -> str:
+    import unicodedata
+    s = unicodedata.normalize("NFD", s or "").encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"\b(hc|bk|hk|mountfield|banes|tipsport)\b", " ", s)
+    return re.sub(r"[^a-z0-9]+", "", s)
+
+
+def kod_podle_nazvu(nazev: str) -> str | None:
+    """Částečný soubor (doplnění pár hráčů): klub se pozná podle názvu a už existujícího souboru klubu."""
+    n = _norm(nazev)
+    if not n:
+        return None
+    shody = []
+    for f in soubory_klubu():
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        nn = _norm(d.get("nazev", ""))
+        if nn and (nn == n or nn in n or n in nn):
+            shody.append(d["kod"])
+    return shody[0] if len(shody) == 1 else None
+
+
 def kod_klubu(hraci: dict) -> str | None:
     """Kód klubu = tým, který se nejčastěji vyskytuje v posledních zápasech hráčů souboru."""
     c = Counter()
@@ -57,8 +81,9 @@ def kod_klubu(hraci: dict) -> str | None:
 
 
 def soubory_klubu() -> list:
-    """Soubory klubů v docs/liga (bez index.json a rucne.json, které klub neobsahují)."""
-    return [f for f in sorted(OUT_DIR.glob("*.json")) if f.name not in ("index.json", "rucne.json")]
+    """Soubory klubů v docs/liga: jen <KÓD>.json (CEB.json, KOM.json…). Ostatní soubory ve složce
+    (index.json, rucne.json, rozlosovani.json…) klub neobsahují a nesmí se číst jako klub."""
+    return [f for f in sorted(OUT_DIR.glob("*.json")) if re.fullmatch(r"[A-Z]{2,4}\.json", f.name)]
 
 
 def sloucit(nove: dict, stare: dict, idy: dict, stare_idy: dict, sezony: dict) -> None:
@@ -102,10 +127,13 @@ def zpracuj(raw: dict, popis: str) -> dict | None:
         cil[name] = sorted(rows, key=lambda x: x[0])
         idy[name] = path
         sezony_hrace[name] = sezony
-    if not hraci:
+    castecne = bool(klub.get("castecne"))
+    if not hraci and not (castecne and brankari):
         print(f"  {popis}: žádní bruslaři, přeskočeno")
         return None
-    kod = kod_klubu(hraci)
+    kod = (kod_podle_nazvu(klub.get("nazev", "")) if castecne else None) or kod_klubu(hraci or brankari)
+    if castecne:
+        print(f"  {popis}: částečný soubor ({klub.get('nazev')}) → {kod}")
     out_file = OUT_DIR / f"{kod}.json"
     stary = {}
     if out_file.exists():
@@ -216,8 +244,12 @@ def kontrola_prirazeni() -> None:
                 for r in rows:
                     e["rows"].setdefault((r[0], r[3], r[4]), r)
                     cur = max(cur, r[14])
-                last = max((r[0] for r in rows), default="")
-                if last > e["last"]:
+                lr = max(rows, key=lambda r: r[0], default=None)   # poslední zápas: klub, který v něm hrál, je aktuální
+                last = lr[0] if lr else ""
+                v_poslednim = lambda c: lr is not None and c in (lr[3], lr[4])
+                if v_poslednim(d["kod"]) and not v_poslednim(e["klub"]):
+                    e["last"], e["klub"] = last, d["kod"]
+                elif not (v_poslednim(e["klub"]) and not v_poslednim(d["kod"])) and last > e["last"]:
                     e["last"], e["klub"] = last, d["kod"]
     rucne = {}
     if RUCNE_FILE.exists():
