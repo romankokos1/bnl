@@ -99,6 +99,52 @@ def sloucit(nove: dict, stare: dict, idy: dict, stare_idy: dict, sezony: dict) -
             nove[shoda] = sorted(nove[shoda] + drzet, key=lambda x: x[0])
 
 
+_CACHE: dict = {}
+
+
+def nacti_klub(f: Path) -> dict:
+    """Načte soubor klubu (s cache, aby se při importu 14 klubů nečetlo 14×14 souborů)."""
+    k = str(f)
+    if k not in _CACHE:
+        try:
+            _CACHE[k] = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            _CACHE[k] = {}
+    return _CACHE[k]
+
+
+def dotahni_historii(kod: str, hraci: dict, brankari: dict, idy: dict) -> int:
+    """Hráč, který přišel z jiného klubu, má ve svém novém souboru po rychlém stahování jen aktuální sezónu.
+    Starší zápasy zůstaly v souboru původního klubu — tady se podle id profilu (/hrac/…/číslo) doplní,
+    aby měl nový klub celou kariéru. Zápasy se porovnávají podle (datum, domácí, hosté), nic se nezdvojí."""
+    jinde = {}
+    for f in soubory_klubu():
+        if f.stem == kod:
+            continue
+        d = nacti_klub(f)
+        for klic in ("hraci", "brankari"):
+            for n, rows in d.get(klic, {}).items():
+                pid = d.get("idy", {}).get(n)
+                if pid:
+                    jinde.setdefault(pid, []).extend(rows)
+    doplneno = 0
+    for cil in (hraci, brankari):
+        for n, rows in cil.items():
+            extra = jinde.get(idy.get(n))
+            if not extra:
+                continue
+            ma = {(r[0], r[3], r[4]) for r in rows}
+            nove = {}
+            for r in extra:
+                k = (r[0], r[3], r[4])
+                if k not in ma:
+                    nove[k] = r
+            if nove:
+                cil[n] = sorted(rows + list(nove.values()), key=lambda x: x[0])
+                doplneno += 1
+    return doplneno
+
+
 def zpracuj_soubor(raw_file: Path) -> None:
     """Jeden soubor = jeden klub (liga-stahovatko.js) nebo celá liga (liga-aktualizace.js, klíč _vse)."""
     raw = json.loads(raw_file.read_text(encoding="utf-8"))
@@ -120,7 +166,7 @@ def zpracuj(raw: dict, popis: str) -> dict | None:
                     rows.append(kompakt(r, int(s)))
         if not rows:
             continue  # hráči bez extraligových zápasů
-        name = e.get("jmeno") or path
+        name = e.get("jmeno") or " ".join(x.capitalize() for x in path.strip("/").split("/")[1].split("-"))   # bez jména: z adresy profilu
         cil = brankari if je_brankar(rows) else hraci
         if name in hraci or name in brankari:
             name = f"{name} ({path.rsplit('/', 1)[-1]})"
@@ -147,12 +193,16 @@ def zpracuj(raw: dict, popis: str) -> dict | None:
     star_br = dict(stary.get("brankari", {}))
     star_br.update({n: r for n, r in stary.get("hraci", {}).items() if je_brankar(r)})  # dříve uložení brankáři mezi bruslaři
     sloucit(brankari, star_br, idy, sid_old, sezony_hrace)
+    dop = dotahni_historii(kod, hraci, brankari, idy)
+    if dop:
+        print(f"  {popis} → {kod}: hráčům, kteří přišli z jiného klubu, doplněna historie ({dop})")
     out = {"kod": kod, "nazev": klub.get("nazev") or stary.get("nazev") or kod,
            "slug": klub.get("slug") or stary.get("slug"),
            "vygenerovano": datetime.now(timezone.utc).isoformat(timespec="seconds"),
            "hraci": hraci, "brankari": brankari, "idy": idy}
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out_file.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    _CACHE.pop(str(out_file), None)
     print(f"  {popis} → {kod}: {len(hraci)} bruslařů, {len(brankari)} brankářů, "
           f"{sum(len(r) for r in hraci.values())} řádků")
     return out
