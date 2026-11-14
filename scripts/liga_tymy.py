@@ -13,6 +13,7 @@ nahradí novými a starší zůstanou (rychlý režim stahovátka tedy nic nesma
                   G, A, B, +/-, TM, TOI(s), sezóna]
 """
 import json
+import os
 import re
 import sys
 from collections import Counter
@@ -164,6 +165,8 @@ def zpracuj(raw: dict, popis: str) -> dict | None:
             for r in v.get("radky", []):
                 if comp_wanted(r.get("comp", "")):
                     rows.append(kompakt(r, int(s)))
+                    if r.get("zid"):
+                        _ZID[f"{r['dt']}|{r['a']}|{r['b']}"] = str(r["zid"])
         if not rows:
             continue  # hráči bez extraligových zápasů
         name = e.get("jmeno") or " ".join(x.capitalize() for x in path.strip("/").split("/")[1].split("-"))   # bez jména: z adresy profilu
@@ -353,6 +356,232 @@ def vycisti_stare() -> None:
             print(f"  {f.name}: přesunuto brankářů {len(presun)} ({', '.join(presun)})")
 
 
+_ZID: dict = {}   # "datum|domácí|hosté" -> ID zápasu na hokej.cz (z řádků, které stahovátko zná)
+
+
+def uloz_zapasy() -> None:
+    """docs/liga/zapasy.json: ID zápasů pro odkaz na hokej.cz. Nové ID se přidají ke starým (nic se nemaže)."""
+    if not _ZID:
+        return
+    f = OUT_DIR / "zapasy.json"
+    try:
+        d = json.loads(f.read_text(encoding="utf-8"))
+        if not isinstance(d, dict):
+            d = {}
+    except Exception:
+        d = {}
+    pred = len(d)
+    d.update(_ZID)
+    f.write_text(json.dumps(dict(sorted(d.items())), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print(f"  zapasy.json: {len(d)} zápasů s ID (nově {len(d) - pred})")
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Kontrola dat po importu. Nic neopravuje a import nikdy neshodí; jen napíše docs/liga/kontrola.md a upozornění.
+# ---------------------------------------------------------------------------------------------------------------
+_PO_RE = re.compile(r"play\s*-?\s*off", re.I)
+VZOREK_FILE = SCRIPT_DIR / "zlaty_vzorek.json"   # volitelné: ručně ověřená čísla z oficiálních zdrojů
+
+
+def _nacti_vse() -> dict:
+    """Všichni hráči ze souborů klubů; hráč v souborech dvou klubů (přestup) se sloučí podle id profilu."""
+    hraci = {}
+    for f in soubory_klubu():
+        d = json.loads(f.read_text(encoding="utf-8"))
+        for klic in ("hraci", "brankari"):
+            for name, rows in d.get(klic, {}).items():
+                key = d.get("idy", {}).get(name) or f"{d['kod']}:{name}"
+                e = hraci.setdefault(key, {"name": name, "rows": {}, "kluby": set()})
+                e["kluby"].add(d["kod"])
+                for r in rows:
+                    e["rows"].setdefault((r[0], r[3], r[4]), r)
+    for e in hraci.values():
+        e["brankar"] = je_brankar(list(e["rows"].values()))
+    return hraci
+
+
+def _hry(hraci: dict) -> dict:
+    hry = {}
+    for e in hraci.values():
+        for k, r in e["rows"].items():
+            h = hry.setdefault(k, {"sa": r[5], "sb": r[6], "ot": r[7], "season": r[14], "n": 0, "g": 0, "as": 0, "skore": set()})
+            h["n"] += 1
+            h["skore"].add((r[5], r[6]))
+            if not e["brankar"]:
+                h["g"] += r[8]
+                h["as"] += r[9]
+    return hry
+
+
+def _rozdil_golu(h: dict):
+    """Kolik gólů ze skóre nemají hráči v datech. 0 = sedí. Po prodloužení / nájezdech může rozhodující nájezd chybět (1)."""
+    if h["sa"] is None or h["sb"] is None:
+        return None
+    return (h["sa"] + h["sb"]) - h["g"]
+
+
+def _vzorek_vysledky(hraci: dict) -> list:
+    if not VZOREK_FILE.exists():
+        return []
+    try:
+        zadani = json.loads(VZOREK_FILE.read_text(encoding="utf-8"))
+        zadani = zadani.get("vzorek", []) if isinstance(zadani, dict) else zadani
+    except Exception as ex:
+        return [{"ok": False, "popis": f"zlaty_vzorek.json nejde přečíst: {ex}"}]
+    out = []
+    for z in zadani:
+        jm = z.get("hrac", "")
+        shody = [e for e in hraci.values() if e["name"] == jm or re.sub(r" \([^)]*\)$", "", e["name"]) == jm]
+        popis = jm + (f" {z['sezona']}/{str(z['sezona'] + 1)[2:]}" if z.get("sezona") else " (kariéra v datech)") + {"zc": " – základní část", "po": " – play off"}.get(z.get("soutez"), "")
+        if len(shody) != 1:
+            out.append({"ok": False, "popis": popis, "text": "nenalezen" if not shody else f"nejednoznačné ({len(shody)} hráčů)"})
+            continue
+        rows = list(shody[0]["rows"].values())
+        if z.get("sezona"):
+            rows = [r for r in rows if r[14] == z["sezona"]]
+        if z.get("soutez") == "zc":
+            rows = [r for r in rows if not _PO_RE.search(r[2] or "")]
+        elif z.get("soutez") == "po":
+            rows = [r for r in rows if _PO_RE.search(r[2] or "")]
+        if shody[0]["brankar"]:
+            mam = {"z": len(rows)}
+        else:
+            mam = {"z": len(rows), "g": sum(r[8] for r in rows), "a": sum(r[9] for r in rows), "b": sum(r[10] for r in rows)}
+        rozdily = [f"{k}: mám {mam[k]}, má být {z[k]}" for k in ("z", "g", "a", "b") if k in z and k in mam and mam[k] != z[k]]
+        out.append({"ok": not rozdily, "popis": popis, "text": "; ".join(rozdily) if rozdily else "sedí"})
+    return out
+
+
+def kontrola_importu(dnes: str | None = None) -> dict:
+    """Zkontroluje všechna uložená data a vyrobí docs/liga/kontrola.md. Vrací slovník pro testy."""
+    hraci = _nacti_vse()
+    if not hraci:
+        print("Kontrola dat: žádná data.")
+        return {}
+    hry = _hry(hraci)
+    cur = max(h["season"] for h in hry.values())
+    varovani = []
+
+    # pokrytí po sezónách
+    pokryti = {}
+    for k, h in hry.items():
+        s = pokryti.setdefault(h["season"], {"hry": 0, "hraci": 0, "skore": 0, "sedi": 0})
+        s["hry"] += 1
+        s["hraci"] += h["n"]
+        d = _rozdil_golu(h)
+        if d is not None:
+            s["skore"] += 1
+            if d == 0 or (h["ot"] and d == 1):
+                s["sedi"] += 1
+
+    # problémy v aktuální sezóně
+    chybi, nadbytek, malo, rozpor = [], [], [], []
+    for k, h in sorted(hry.items()):
+        if h["season"] != cur:
+            continue
+        d = _rozdil_golu(h)
+        popis = f"{k[0]} {k[1]}–{k[2]} {h['sa']}:{h['sb']}" if h["sa"] is not None else f"{k[0]} {k[1]}–{k[2]}"
+        if d is not None and d < 0:
+            nadbytek.append(f"{popis}: hráči mají {h['g']} gólů, skóre {h['sa'] + h['sb']}")
+        elif d is not None and (d > 1 or (d == 1 and not h["ot"])):
+            chybi.append(f"{popis}: v datech {h['g']} gólů ze {h['sa'] + h['sb']}, hráčů {h['n']}")
+        if h["n"] < 20:
+            malo.append(f"{popis}: v datech jen {h['n']} hráčů")
+        if len(h["skore"]) > 1:
+            rozpor.append(f"{popis}: různé řádky mají různé skóre {sorted(h['skore'], key=str)}")
+    for nazev, seznam in (("chybí góly", chybi), ("více gólů hráčů než skóre", nadbytek), ("málo hráčů v zápase", malo), ("rozporné skóre", rozpor)):
+        if seznam:
+            varovani.append((f"Aktuální sezóna: {len(seznam)}× {nazev}", seznam))
+
+    # řádek sám o sobě nedává smysl
+    body, pm_mimo, dva_zapasy = [], [], []
+    for e in hraci.values():
+        poDnech = {}
+        for k, r in e["rows"].items():
+            poDnech.setdefault(k[0], set()).add((k[1], k[2]))
+            if not e["brankar"]:
+                if r[10] != r[8] + r[9]:
+                    body.append(f"{e['name']} {k[0]}: G{r[8]}+A{r[9]} ≠ B{r[10]}")
+                if abs(r[11] or 0) > 8:
+                    pm_mimo.append(f"{e['name']} {k[0]}: +/− {r[11]}")
+        for dt, z in poDnech.items():
+            if len(z) > 1:
+                dva_zapasy.append(f"{e['name']} {dt}: dva různé zápasy")
+    for nazev, seznam in (("body ≠ góly + asistence", body), ("podezřelé +/−", pm_mimo), ("hráč ve dvou zápasech v jeden den", dva_zapasy)):
+        if seznam:
+            varovani.append((f"Všechna data: {len(seznam)}× {nazev}", seznam))
+
+    # změny proti minulému importu
+    stav_file = OUT_DIR / "kontrola_stav.json"
+    try:
+        minule = json.loads(stav_file.read_text(encoding="utf-8"))
+    except Exception:
+        minule = {}
+    stav = {}
+    for f in soubory_klubu():
+        d = json.loads(f.read_text(encoding="utf-8"))
+        stav[d["kod"]] = {"hraci": len(d.get("hraci", {})), "brankari": len(d.get("brankari", {})),
+                          "radku": sum(len(r) for r in d.get("hraci", {}).values()) + sum(len(r) for r in d.get("brankari", {}).values())}
+    zmeny = []
+    for kod, s in stav.items():
+        m = (minule.get("kluby") or {}).get(kod)
+        if not m:
+            continue
+        if s["radku"] < m["radku"] * 0.99:
+            zmeny.append(f"{kod}: řádků {m['radku']} → {s['radku']} (ubylo)")
+        if s["hraci"] + s["brankari"] < m["hraci"] + m["brankari"]:
+            zmeny.append(f"{kod}: hráčů {m['hraci'] + m['brankari']} → {s['hraci'] + s['brankari']} (ubylo)")
+    if zmeny:
+        varovani.append((f"Proti minulému importu ubylo dat u {len(zmeny)} klubů", zmeny))
+
+    vzorek = _vzorek_vysledky(hraci)
+    if any(not v["ok"] for v in vzorek):
+        varovani.append((f"Zlatý vzorek: {sum(1 for v in vzorek if not v['ok'])} z {len(vzorek)} nesedí",
+                         [f"{v['popis']}: {v.get('text', '')}" for v in vzorek if not v["ok"]]))
+
+    posledni = max((k[0] for k, h in hry.items() if h["season"] == cur), default="")
+    # zpráva
+    L = [f"# Kontrola dat", "", f"Vygenerováno {dnes or datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')} UTC. "
+         f"Poslední zápas v datech: {posledni}. Hráčů: {len(hraci)}, zápasů: {len(hry)}.", ""]
+    if varovani:
+        L += ["## Upozornění", ""]
+        for nadpis, seznam in varovani:
+            L += [f"### {nadpis}", ""] + [f"- {x}" for x in seznam[:25]] + ([f"- … a dalších {len(seznam) - 25}"] if len(seznam) > 25 else []) + [""]
+    else:
+        L += ["## Upozornění", "", "Žádná.", ""]
+    L += ["## Pokrytí podle sezón", "",
+          "Zápas je v datech, pokud v něm nastoupil aspoň jeden hráč, jehož kariéru máme. U starších sezón proto chybí hráči, "
+          "kteří dnes už nehrají. „Góly sedí“ = součet gólů hráčů v datech odpovídá skóre zápasu.", "",
+          "| Sezóna | Zápasů | Hráčů na zápas | Góly sedí |", "|---|---|---|---|"]
+    for s in sorted(pokryti, reverse=True):
+        p = pokryti[s]
+        L.append(f"| {s}/{str(s + 1)[2:]} | {p['hry']} | {p['hraci'] / p['hry']:.1f} | "
+                 f"{(100 * p['sedi'] / p['skore']) if p['skore'] else 0:.0f} % |")
+    if vzorek:
+        L += ["", "## Zlatý vzorek", ""] + [f"- {'OK' if v['ok'] else 'CHYBA'} {v['popis']}: {v.get('text', '')}" for v in vzorek]
+    L += ["", "## Kluby", "", "| Klub | Hráčů | Brankářů | Řádků |", "|---|---|---|---|"]
+    for kod, s in sorted(stav.items()):
+        L.append(f"| {kod} | {s['hraci']} | {s['brankari']} | {s['radku']} |")
+    zprava = "\n".join(L) + "\n"
+    (OUT_DIR / "kontrola.md").write_text(zprava, encoding="utf-8")
+    stav_file.write_text(json.dumps({"vygenerovano": dnes or datetime.now(timezone.utc).isoformat(timespec="seconds"), "kluby": stav},
+                                    ensure_ascii=False), encoding="utf-8")
+
+    # výpis do logu Actions (žlutá upozornění, nic neshazuje)
+    print(f"Kontrola dat: {len(varovani)} upozornění (podrobně docs/liga/kontrola.md)")
+    for nadpis, seznam in varovani:
+        print(f"  ! {nadpis}")
+        if os.environ.get("GITHUB_ACTIONS"):
+            print(f"::warning title=Kontrola dat::{nadpis}")
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        try:
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
+                fh.write(zprava)
+        except Exception:
+            pass
+    return {"varovani": varovani, "pokryti": pokryti, "vzorek": vzorek, "stav": stav}
+
+
 def main() -> None:
     soubory = [Path(a) for a in sys.argv[1:]] or sorted(RAW_DIR.glob("liga_*.json"))
     if not soubory:
@@ -360,11 +589,24 @@ def main() -> None:
         vycisti_stare()
         index()
         kontrola_prirazeni()
+        spust_kontrolu()
         return
     for f in soubory:
         zpracuj_soubor(f)
+    uloz_zapasy()
     index()
     kontrola_prirazeni()
+    spust_kontrolu()
+
+
+def spust_kontrolu() -> None:
+    """Kontrola dat nesmí import nikdy shodit."""
+    try:
+        kontrola_importu()
+    except Exception as ex:   # noqa: BLE001
+        import traceback
+        print(f"Kontrola dat selhala (import je v pořádku): {ex}")
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
