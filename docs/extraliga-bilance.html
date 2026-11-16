@@ -2533,6 +2533,11 @@ function renderAfter(el,A,B,cut,G){
       if(r.p>0){var k=ptsRun(rs,i);if(k>=4)F.push({s:50+k,k:'Série',h:nm+' bodoval už '+k+' zápasů v řadě'})}
       else if(i>0){var k2=ptsRun(rs,i-1);if(k2>=5)F.push({s:55,k:'Série',h:nm+': série '+k2+' zápasů s bodem skončila'})}
     }
+    var O=K===A?B:A,rv=INFR(n).filter(function(q){return opp(q)===O&&q.dt<=g.dt}).sort(function(a,b){return a.dt<b.dt?-1:a.dt>b.dt?1:0}),j=rv.findIndex(function(q){return q.dt===g.dt});
+    if(j>=0){
+      if(r.p>0){var kv=ptsRun(rv,j);if(kv>=3)F.push({s:56+kv*3,k:'Série proti '+O,h:nm+' bodoval proti '+clubNm(O)+' už '+kv+' zápasů v řadě'})}
+      else if(j>0){var kv2=ptsRun(rv,j-1);if(kv2>=3)F.push({s:52+kv2*2,k:'Série proti '+O,h:nm+': série '+kv2+' zápasů s bodem proti '+clubNm(O)+' skončila'})}
+    }
   })});
   var h='<div class="zscore"><b>'+clubNm(g.a)+' – '+clubNm(g.b)+'</b> <span class="v">'+(g.sa==null?'':g.sa+':'+g.sb+(g.ot?' po prodl.':''))+'</span> <span class="muted">'+fdate(g.dt)+' · '+xe(g.comp||'')+'</span></div>';
   h+='<div class="zcols">'+[A,B].map(function(K){
