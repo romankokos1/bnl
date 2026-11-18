@@ -2975,7 +2975,7 @@ function cardSvg(n,rows,final,all){
     if(cand){
       var gr=milGrid(cand.k,cand.cur),prev=gr.length?gr[gr.length-1]:0,fr=Math.max(0,Math.min(1,(cand.cur-prev)/(cand.t-prev))),T2=MTYPE[cand.k];
       row('BLÍŽÍ SE MILNÍK',{t:cand.t+'. '+T2.lbl},'teď '+cand.cur,cand.left,'zbývá');
-      b+=bR(36,Y-9,528,3,'#d2dae1')+bR(36,Y-9,(528*fr).toFixed(1),3,CD);
+      b+=bR(36,Y-8,528,7,'#d2dae1')+bR(36,Y-8,(528*fr).toFixed(1),7,CD);
       Y+=8;
     }
   }catch(e){console.warn('bilance: milník na kartě selhal',e)}
@@ -2984,8 +2984,8 @@ function cardSvg(n,rows,final,all){
   var sv=Object.keys(sea).map(Number).sort(function(a,b){return a-b}).slice(-9),mb=1;sv.forEach(function(k){if(sea[k].b>mb)mb=sea[k].b});
   Y+=34;
   b+=sec(Y,'BODY PO SEZÓNÁCH');
-  var sb=Y+104,sbw=Math.min(44,(528-(sv.length-1)*8)/Math.max(1,sv.length));
-  sv.forEach(function(k,i){var o=sea[k],hg=64*o.g/mb,ha=64*o.a/mb,x=36+i*(sbw+8);
+  var sb=Y+104,sgap=10,sbw=Math.min(52,(528-(sv.length-1)*sgap)/Math.max(1,sv.length));
+  sv.forEach(function(k,i){var o=sea[k],hg=64*o.g/mb,ha=64*o.a/mb,x=36+i*(sbw+sgap);
     if(hg>0)b+=bR(x,(sb-hg).toFixed(1),sbw,hg.toFixed(1),CB);
     if(ha>0)b+=bR(x,(sb-hg-ha).toFixed(1),sbw,ha.toFixed(1),CA);
     b+='<text x="'+(x+sbw/2)+'" y="'+(sb-hg-ha-5).toFixed(1)+'" text-anchor="middle" font-family="Big Shoulders Display,Inter,sans-serif" font-size="15" font-weight="700" fill="'+CD+'">'+o.b+'</text>';
@@ -3006,11 +3006,13 @@ function cardSvg(n,rows,final,all){
   }
   var be=M.best,wo=M.worst;
   box(36,'NEJVÍCE OBLÍBENÝ SOUPEŘ',be,be&&{big:(be.t.b/be.t.z).toFixed(2).replace('.',',')+' b/z',small:be.t.b+' b v '+be.t.z+' z.'});
+  b+=bR(299.5,Y-24,1,94,'#d2dae1');
   box(306,'NEJMÉNĚ OBLÍBENÝ SOUPEŘ',wo,wo&&{big:bPmT(wo.t.pm)+' +/−',small:wo.t.b+' b v '+wo.t.z+' z.'});
   Y+=66+34;
   b+=bR(36,Y-16,528,1,'#d2dae1');
   b+='<text x="36" y="'+Y+'" font-size="10.5" fill="#8593a0">'+xe((function(c){return c?c.charAt(0).toUpperCase()+c.slice(1):'Extraliga'})(compText(rows)))+' · soupeř = min. 3 zápasy</text><text x="564" y="'+Y+'" text-anchor="end" font-size="10.5" font-weight="700" fill="#8593a0">zdroj: hokej.cz</text>';
-  var H=Y+22;
+  var H=Y+34,cc=TEAMCOL[club]||[CD],bw2=600/cc.length;
+  cc.forEach(function(c,i){b+=bR((i*bw2).toFixed(1),H-8,(bw2+.5).toFixed(1),8,c)});
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 '+H+'" width="600" height="'+H+'" role="img" aria-label="'+xe('Karta hráče: '+n)+'" '+F+'><rect width="600" height="'+H+'" fill="#f0f4f7"/>'+b+'</svg>';
 }
 
