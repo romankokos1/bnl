@@ -185,6 +185,8 @@ def zpracuj(raw: dict, popis: str) -> dict | None:
     kod = (kod_podle_nazvu(klub.get("nazev", "")) if castecne else None) or kod_klubu(hraci or brankari)
     if castecne:
         print(f"  {popis}: částečný soubor ({klub.get('nazev')}) → {kod}")
+    for pid in set(idy.values()):   # dřív, než sloučení doplní hráče ze starého souboru
+        _ROSTER.setdefault(pid, set()).add(kod)
     out_file = OUT_DIR / f"{kod}.json"
     stary = {}
     if out_file.exists():
@@ -359,6 +361,7 @@ def vycisti_stare() -> None:
 
 
 _ZID: dict = {}   # "datum|domácí|hosté" -> ID zápasu na hokej.cz (z řádků, které stahovátko zná)
+_ROSTER: dict = {}   # profil hráče -> kódy klubů, v jejichž části stahovaných dat tento import hráč byl (soupiska / ručně doplnění)
 
 
 _VIDENI: dict = {}   # profil hráče -> (nejnovější stažená sezóna, skript stáhl celou kariéru)
@@ -634,6 +637,71 @@ def kontrola_importu(dnes: str | None = None) -> dict:
     return {"varovani": varovani, "pokryti": pokryti, "vzorek": vzorek, "stav": stav}
 
 
+def sjednot_prestupy() -> None:
+    """Hráč, který přestoupil, zůstává v souboru starého klubu (soubor si pamatuje všechny, co kdy přišli).
+    Když se pak otevře jen starý klub, je tam pořád. Tady se hráč, který je v souborech dvou a více klubů, nechá jen v jednom:
+    1) v klubu, v jehož soupisce (části stahovaných dat) byl při tomto importu; když jich je víc nebo žádný,
+    2) v klubu, který hrál jeho poslední zápas (musí to být jen jeden z kandidátů).
+    Když nerozhodne ani jedno, zůstane v obou souborech a vypíše se to do logu. Zápasy, které vlastník nemá, se mu před odebráním doplní."""
+    soubory = {}
+    for f in soubory_klubu():
+        try:
+            soubory[f.stem] = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+    kde = {}   # profil -> {kód klubu: (část souboru, jméno)}
+    for kod, d in soubory.items():
+        for klic in ("hraci", "brankari"):
+            for n in d.get(klic, {}):
+                pid = d.get("idy", {}).get(n)
+                if pid:
+                    kde.setdefault(pid, {})[kod] = (klic, n)
+    zmeneno, nejasne, presunu = set(), [], 0
+    for pid, m in kde.items():
+        if len(m) < 2:
+            continue
+        sou = set(m) & _ROSTER.get(pid, set())
+        if len(sou) == 1:
+            vlastnik = next(iter(sou))
+        else:
+            vse = {}
+            for kod, (klic, n) in m.items():
+                for r in soubory[kod][klic][n]:
+                    vse[(r[0], r[3], r[4])] = r
+            lr = max(vse.values(), key=lambda r: r[0], default=None)
+            kand = sou or set(m)
+            v_poslednim = [c for c in kand if lr is not None and c in (lr[3], lr[4])]
+            if len(v_poslednim) != 1:
+                nejasne.append(f"{next(iter(m.values()))[1]} ({', '.join(sorted(m))})")
+                continue
+            vlastnik = v_poslednim[0]
+        vk, vn = m[vlastnik]
+        radky = {(r[0], r[3], r[4]): r for r in soubory[vlastnik][vk][vn]}
+        pridano = 0
+        for kod, (klic, n) in m.items():
+            if kod == vlastnik:
+                continue
+            for r in soubory[kod][klic][n]:
+                if (r[0], r[3], r[4]) not in radky:
+                    radky[(r[0], r[3], r[4])] = r
+                    pridano += 1
+            del soubory[kod][klic][n]
+            soubory[kod].get("idy", {}).pop(n, None)
+            zmeneno.add(kod)
+            presunu += 1
+        if pridano:
+            soubory[vlastnik][vk][vn] = sorted(radky.values(), key=lambda x: x[0])
+            zmeneno.add(vlastnik)
+        print(f"  přestup: {vn} → {vlastnik} (odebrán z {', '.join(sorted(set(m) - {vlastnik}))})")
+    for kod in zmeneno:
+        f = OUT_DIR / f"{kod}.json"
+        f.write_text(json.dumps(soubory[kod], ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        _CACHE.pop(str(f), None)
+    if nejasne:
+        print(f"  přestupy, u kterých nejde určit klub (zůstávají v obou souborech): {'; '.join(nejasne)}")
+    print(f"  přestupy: sjednoceno {presunu}, nejasných {len(nejasne)}")
+
+
 def main() -> None:
     soubory = [Path(a) for a in sys.argv[1:]] or sorted(RAW_DIR.glob("liga_*.json"))
     if not soubory:
@@ -646,6 +714,10 @@ def main() -> None:
         return
     for f in soubory:
         zpracuj_soubor(f)
+    try:
+        sjednot_prestupy()
+    except Exception as ex:   # noqa: BLE001
+        print(f"Sjednocení přestupů selhalo (import je v pořádku): {ex}")
     uloz_zapasy()
     uloz_znami()
     index()
