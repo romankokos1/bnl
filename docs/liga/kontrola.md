@@ -1,6 +1,6 @@
 # Kontrola dat
 
-Vygenerováno 2026-11-16 08:23 UTC. Poslední zápas v datech: 2026-11-15. Hráčů: 423, zápasů: 7945.
+Vygenerováno 2026-11-21 08:02 UTC. Poslední zápas v datech: 2026-11-20. Hráčů: 423, zápasů: 7954.
 
 ## Upozornění
 
@@ -12,7 +12,7 @@ Zápas je v datech, pokud v něm nastoupil aspoň jeden hráč, jehož kariéru 
 
 | Sezóna | Zápasů | Hráčů na zápas | Góly sedí |
 |---|---|---|---|
-| 2026/27 | 130 | 40.6 | 100 % |
+| 2026/27 | 139 | 40.6 | 100 % |
 | 2025/26 | 420 | 34.4 | 63 % |
 | 2024/25 | 423 | 28.4 | 43 % |
 | 2023/24 | 418 | 24.3 | 27 % |
@@ -42,17 +42,17 @@ Zápas je v datech, pokud v něm nastoupil aspoň jeden hráč, jehož kariéru 
 
 | Klub | Hráčů | Brankářů | Řádků |
 |---|---|---|---|
-| CEB | 29 | 3 | 6871 |
-| KLA | 29 | 2 | 5798 |
-| KOM | 31 | 3 | 8348 |
-| KVA | 24 | 2 | 4275 |
-| LIB | 26 | 2 | 6429 |
-| LIT | 31 | 3 | 5751 |
-| MBL | 30 | 2 | 7152 |
-| MHK | 27 | 3 | 7747 |
-| OLO | 26 | 3 | 7745 |
-| PCE | 31 | 2 | 8530 |
-| PLZ | 23 | 2 | 4678 |
-| SPA | 32 | 3 | 5954 |
-| TRI | 28 | 2 | 10057 |
-| VIT | 29 | 2 | 4887 |
+| CEB | 29 | 3 | 6893 |
+| KLA | 29 | 2 | 5819 |
+| KOM | 31 | 3 | 8389 |
+| KVA | 24 | 2 | 4294 |
+| LIB | 26 | 2 | 6449 |
+| LIT | 32 | 3 | 6243 |
+| MBL | 30 | 2 | 7172 |
+| MHK | 27 | 3 | 7788 |
+| OLO | 26 | 3 | 7786 |
+| PCE | 31 | 2 | 8550 |
+| PLZ | 23 | 2 | 4699 |
+| SPA | 32 | 3 | 5978 |
+| TRI | 28 | 2 | 10096 |
+| VIT | 29 | 2 | 4907 |
