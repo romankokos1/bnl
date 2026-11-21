@@ -167,6 +167,8 @@ def zpracuj(raw: dict, popis: str) -> dict | None:
                     rows.append(kompakt(r, int(s)))
                     if r.get("zid"):
                         _ZID[f"{r['dt']}|{r['a']}|{r['b']}"] = str(r["zid"])
+        if sezony:
+            _VIDENI[path] = (max(sezony), bool(e.get("uplne")))   # i hráč bez extraligových zápasů: skript ho už zná
         if not rows:
             continue  # hráči bez extraligových zápasů
         name = e.get("jmeno") or " ".join(x.capitalize() for x in path.strip("/").split("/")[1].split("-"))   # bez jména: z adresy profilu
@@ -357,6 +359,56 @@ def vycisti_stare() -> None:
 
 
 _ZID: dict = {}   # "datum|domácí|hosté" -> ID zápasu na hokej.cz (z řádků, které stahovátko zná)
+
+
+_VIDENI: dict = {}   # profil hráče -> (nejnovější stažená sezóna, skript stáhl celou kariéru)
+ZNAMI_FILE_NAME = "znami.json"
+
+
+def uloz_znami() -> None:
+    """docs/liga/znami.json: {profil hráče: [poslední sezóna, kterou známe, 1 = celá kariéra ověřená / 0 = nejistá]}.
+    Čte ho aktualizační skript (stahuje celou kariéru jen těm, kde je 0 nebo které nezná) a stránka (u hráčů s 0 netvrdí
+    debut ani milníky). 0 dostane hráč, jehož uložená data mají jen nejnovější sezónu (nový v lize nebo navrátilec) a kterému
+    skript celou kariéru ještě nestáhl; po jejím stažení se změní na 1 a už se nevrací."""
+    f = OUT_DIR / ZNAMI_FILE_NAME
+    try:
+        stare = json.loads(f.read_text(encoding="utf-8"))
+        if not isinstance(stare, dict):
+            stare = {}
+    except Exception:
+        stare = {}
+    ulozene = {}
+    for k in soubory_klubu():
+        try:
+            d = json.loads(k.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        for klic in ("hraci", "brankari"):
+            for n, rows in d.get(klic, {}).items():
+                pid = d.get("idy", {}).get(n)
+                if pid and rows:
+                    ulozene.setdefault(pid, set()).update(r[14] for r in rows)
+    cur = max((max(s) for s in ulozene.values()), default=0)
+    z = {}
+    for pid in set(ulozene) | set(_VIDENI) | set(stare):
+        sez = ulozene.get(pid, set())
+        m = max(sez) if sez else 0
+        if sez:
+            p = 0 if min(sez) == m == cur else 1   # uloženou máme jen letošní sezónu: nový hráč, nebo navrátilec bez starší historie
+        else:
+            p = 0                                   # bez extraligových zápasů: dokud skript nestáhne celou kariéru, je nejistý
+        s, v = stare.get(pid), _VIDENI.get(pid)
+        if s:
+            m = max(m, s[0])
+            if s[1]:
+                p = 1
+        if v:
+            m = max(m, v[0])
+            if v[1]:
+                p = 1
+        z[pid] = [m, p]
+    f.write_text(json.dumps(dict(sorted(z.items())), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print(f"  znami.json: {len(z)} hráčů, z toho {sum(1 for v in z.values() if not v[1])} s nejistou historií")
 
 
 def uloz_zapasy() -> None:
@@ -587,6 +639,7 @@ def main() -> None:
     if not soubory:
         print("Žádné nové vstupní soubory, jen čistím uložená data.")
         vycisti_stare()
+        uloz_znami()
         index()
         kontrola_prirazeni()
         spust_kontrolu()
@@ -594,6 +647,7 @@ def main() -> None:
     for f in soubory:
         zpracuj_soubor(f)
     uloz_zapasy()
+    uloz_znami()
     index()
     kontrola_prirazeni()
     spust_kontrolu()
