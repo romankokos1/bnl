@@ -1,10 +1,22 @@
 # Kontrola dat
 
-Vygenerováno 2026-11-21 09:18 UTC. Poslední zápas v datech: 2026-11-20. Hráčů: 423, zápasů: 7960.
+Vygenerováno 2026-11-21 09:34 UTC. Poslední zápas v datech: 2026-11-20. Hráčů: 423, zápasů: 7960.
 
 ## Upozornění
 
-Žádná.
+### Proti minulému importu ubylo dat u 11 klubů
+
+- CEB: řádků 6895 → 6537 (ubylo)
+- CEB: hráčů 32 → 31 (ubylo)
+- KLA: řádků 5820 → 5429 (ubylo)
+- KLA: hráčů 31 → 30 (ubylo)
+- KVA: hráčů 26 → 25 (ubylo)
+- MBL: řádků 7172 → 6831 (ubylo)
+- MBL: hráčů 32 → 30 (ubylo)
+- MHK: řádků 7788 → 7528 (ubylo)
+- MHK: hráčů 30 → 29 (ubylo)
+- SPA: řádků 6154 → 5392 (ubylo)
+- SPA: hráčů 35 → 33 (ubylo)
 
 ## Pokrytí podle sezón
 
@@ -42,17 +54,17 @@ Zápas je v datech, pokud v něm nastoupil aspoň jeden hráč, jehož kariéru 
 
 | Klub | Hráčů | Brankářů | Řádků |
 |---|---|---|---|
-| CEB | 29 | 3 | 6895 |
-| KLA | 29 | 2 | 5820 |
+| CEB | 28 | 3 | 6537 |
+| KLA | 28 | 2 | 5429 |
 | KOM | 31 | 3 | 8389 |
-| KVA | 24 | 2 | 4294 |
+| KVA | 23 | 2 | 4293 |
 | LIB | 26 | 2 | 6449 |
 | LIT | 32 | 3 | 6243 |
-| MBL | 30 | 2 | 7172 |
-| MHK | 27 | 3 | 7788 |
+| MBL | 28 | 2 | 6831 |
+| MHK | 26 | 3 | 7528 |
 | OLO | 26 | 3 | 7786 |
 | PCE | 31 | 2 | 8550 |
 | PLZ | 23 | 2 | 4699 |
-| SPA | 32 | 3 | 6154 |
+| SPA | 30 | 3 | 5392 |
 | TRI | 28 | 2 | 10096 |
 | VIT | 29 | 2 | 4907 |
