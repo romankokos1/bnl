@@ -1,6 +1,6 @@
 # Kontrola dat
 
-Vygenerováno 2026-11-21 08:33 UTC. Poslední zápas v datech: 2026-11-20. Hráčů: 423, zápasů: 7954.
+Vygenerováno 2026-11-21 09:18 UTC. Poslední zápas v datech: 2026-11-20. Hráčů: 423, zápasů: 7960.
 
 ## Upozornění
 
@@ -22,11 +22,11 @@ Zápas je v datech, pokud v něm nastoupil aspoň jeden hráč, jehož kariéru 
 | 2019/20 | 368 | 12.7 | 6 % |
 | 2018/19 | 424 | 10.5 | 3 % |
 | 2017/18 | 422 | 8.5 | 1 % |
-| 2016/17 | 423 | 6.8 | 2 % |
-| 2015/16 | 421 | 5.9 | 2 % |
+| 2016/17 | 423 | 7.0 | 2 % |
+| 2015/16 | 421 | 6.0 | 2 % |
 | 2014/15 | 423 | 5.4 | 0 % |
-| 2013/14 | 421 | 4.5 | 3 % |
-| 2012/13 | 419 | 3.6 | 1 % |
+| 2013/14 | 422 | 4.6 | 3 % |
+| 2012/13 | 424 | 3.6 | 1 % |
 | 2011/12 | 416 | 2.7 | 1 % |
 | 2010/11 | 357 | 2.2 | 0 % |
 | 2009/10 | 313 | 1.9 | 1 % |
@@ -42,8 +42,8 @@ Zápas je v datech, pokud v něm nastoupil aspoň jeden hráč, jehož kariéru 
 
 | Klub | Hráčů | Brankářů | Řádků |
 |---|---|---|---|
-| CEB | 29 | 3 | 6893 |
-| KLA | 29 | 2 | 5819 |
+| CEB | 29 | 3 | 6895 |
+| KLA | 29 | 2 | 5820 |
 | KOM | 31 | 3 | 8389 |
 | KVA | 24 | 2 | 4294 |
 | LIB | 26 | 2 | 6449 |
@@ -53,6 +53,6 @@ Zápas je v datech, pokud v něm nastoupil aspoň jeden hráč, jehož kariéru 
 | OLO | 26 | 3 | 7786 |
 | PCE | 31 | 2 | 8550 |
 | PLZ | 23 | 2 | 4699 |
-| SPA | 32 | 3 | 5978 |
+| SPA | 32 | 3 | 6154 |
 | TRI | 28 | 2 | 10096 |
 | VIT | 29 | 2 | 4907 |
