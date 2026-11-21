@@ -1,6 +1,6 @@
 # Kontrola dat
 
-Vygenerováno 2026-11-21 08:02 UTC. Poslední zápas v datech: 2026-11-20. Hráčů: 423, zápasů: 7954.
+Vygenerováno 2026-11-21 08:33 UTC. Poslední zápas v datech: 2026-11-20. Hráčů: 423, zápasů: 7954.
 
 ## Upozornění
 
