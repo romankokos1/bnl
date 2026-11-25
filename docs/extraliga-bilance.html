@@ -90,7 +90,7 @@ h1 { font-size: var(--fs-xl); line-height: 1.25; font-weight: 700; letter-spacin
 .theme-btn:hover { color: var(--text); background: var(--surface-2); }
 
 /* skok na nadpis (klik na hráče) nesmí skončit pod přilepenou navigací */
-.card, h2, #tblTitle { scroll-margin-top: calc(var(--nav-h) + var(--s-3)); }
+.card, h2, #tblTitle, #tiles { scroll-margin-top: calc(var(--nav-h) + var(--s-3)); }
 .nav { position: sticky; top: 0; z-index: 40; background: var(--surface); border-bottom: 1px solid var(--border); }
 .nav-in { display: flex; align-items: stretch; gap: var(--s-6); min-height: var(--nav-h); }
 .nav .search { flex: 0 0 300px; align-self: center; margin: 0; }
@@ -119,6 +119,14 @@ details:not([open]) > summary { margin-bottom: 0; }
 .mil h3 { margin-top: var(--s-5); }
 /* nadpis bloku uvnitř karty (analýzy, zápas) */
 h3.kh, #zcard h3 { font-size: var(--fs-base); font-weight: 650; margin: var(--s-6) 0 var(--s-2); padding-top: var(--s-3); border-top: 1px solid var(--border); }
+#scard h3.kh { margin-top: var(--s-5); padding-top: 10px; }
+#scard .seg.sub:not(.tools), #scard .sctl { margin-bottom: 10px; }
+#scard .kstats { margin: 0 0 var(--s-2); }
+#scard > .small:last-child, #scard .tblwrap + .small { margin-top: 10px; }
+/* široké tabulky nástrojů: jemné pruhování pomáhá udržet řádek přes celou šířku */
+#scard table.ser tbody tr:nth-child(even) td { background-color: var(--surface-2); }
+#scard table.ser tbody tr:nth-child(even) td.pts { background-color: var(--surface-3); }
+#scard table.ser tbody tr:hover td { background-color: var(--accent-soft); }
 #zcard .zcols h3 { border-top: 0; padding-top: 0; margin-top: var(--s-4); display: flex; align-items: center; }
 
 /* ---------- 5 · ovládací prvky ---------- */
@@ -197,8 +205,11 @@ input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; m
 .seg.tabs button.on { color: var(--text); font-weight: 650; background: none; }
 .seg.tabs button.on::after { background: var(--accent); }
 /* seznam nástrojů v Analýzách: řada odkazů, ne segmenty */
-.seg.tools { display: flex; flex-direction: column; flex-wrap: nowrap; gap: 6px; padding: 0 0 var(--s-3); margin: 0 0 var(--s-4); border: 0; border-bottom: 1px solid var(--border); border-radius: 0; overflow: visible; background: none; }
-.seg.tools .tg { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.seg.tools { display: flex; max-width: none; flex-direction: column; flex-wrap: nowrap; gap: 2px; padding: 8px var(--s-5); margin: calc(-1 * var(--s-4)) calc(-1 * var(--s-5)) var(--s-3);
+  border: 0; border-bottom: 1px solid var(--border); border-radius: var(--r-3) var(--r-3) 0 0; overflow: visible; background: var(--surface-2); }
+.seg.tools .tg { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; padding-left: 116px; }
+.seg.tools .tg .tgl { margin-left: -116px; }
+.seg.tools button:not(.on):hover { background: var(--surface); }
 .seg.tools .tgl { flex: none; width: 112px; font-size: var(--fs-xs); font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
 .tsel { display: none; }
 .seg.tools button { height: 28px; padding: 0 10px; border: 0; border-radius: var(--r-2); font-size: var(--fs-md); }
@@ -498,21 +509,26 @@ a.gu:hover { color: var(--text); }
 }
 @media (max-width: 900px) {
   .nav { position: static; }
-  .card, h2, #tblTitle { scroll-margin-top: var(--s-3); }
+  .card, h2, #tblTitle, #tiles { scroll-margin-top: var(--s-3); }
   .nav-in { flex-direction: column; gap: 0; padding-left: 0; padding-right: 0; }
   .nav .search { flex: none; order: -1; align-self: stretch; margin: var(--s-3) var(--s-4) var(--s-1); }
   .nav .hres { left: 0; width: auto; }
-  .seg.tabs { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 0 var(--s-2);
-    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
+  .seg.tabs { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 0 var(--s-2); }
   .seg.tabs::-webkit-scrollbar { display: none; }
   .seg.tabs button { flex: none; min-height: 44px; padding: 0 12px; }
   .zcols, .fxcols { grid-template-columns: 1fr; }
+  .tblwrap, .hm-scroll {
+    background: linear-gradient(90deg, var(--surface) 30%, transparent) left center / 32px 100% no-repeat local,
+                linear-gradient(270deg, var(--surface) 30%, transparent) right center / 32px 100% no-repeat local,
+                radial-gradient(farthest-side at 0 50%, rgba(23,35,52,.16), transparent) left center / 12px 100% no-repeat scroll,
+                radial-gradient(farthest-side at 100% 50%, rgba(23,35,52,.16), transparent) right center / 12px 100% no-repeat scroll; }
   .bil-fig { max-width: none; }
 }
 @media (max-width: 760px) {
   /* na telefonu místo 16 tlačítek jeden výběr se skupinami */
   .seg.tools { display: none; }
-  .tsel { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--s-3); padding: 0 0 var(--s-3); margin: 0 0 var(--s-4); border-bottom: 1px solid var(--border); }
+  .tsel { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--s-3); padding: 10px var(--s-4); margin: calc(-1 * var(--s-3)) calc(-1 * var(--s-4)) var(--s-3);
+    background: var(--surface-2); border-bottom: 1px solid var(--border); border-radius: var(--r-3) var(--r-3) 0 0; }
   .tsel label { font-size: var(--fs-sm); font-weight: 650; color: var(--text-2); }
   .tsel select { font-weight: 600; }
   .seg:not(.tabs):not(.tools) { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
@@ -534,8 +550,12 @@ a.gu:hover { color: var(--text); }
   .f-club select, .f-main select { max-width: none; }
   .presets button { height: 34px; }
   .presets button.off { margin-left: 0; }
-  .chips { grid-template-columns: 1fr 1fr; }
-  .chip { height: 38px; }
+  /* soupiska: tři sloupce, příjmení má přednost před křestním jménem */
+  .chips { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .chip { height: 36px; gap: 4px; padding: 0 7px; font-size: var(--fs-md); }
+  .chip b { flex: 0 1 auto; }
+  .chip .fn { flex: 1 1 0; min-width: 0; margin-left: 0; }
+  .chip .no { font-size: var(--fs-2xs); }
   .seg button, .pickmode button { height: 36px; }
   .sbn b { font-size: 20px; }
   /* pruh statistik na telefonu: 3 + 2 buňky */
@@ -582,6 +602,17 @@ a.gu:hover { color: var(--text); }
   .vpick > div { flex: 1 1 140px; }
   .kcols, .leads, .cols { grid-template-columns: 1fr; }
 }
+@media (max-width: 600px) {
+  /* hlavní navigace: všech šest pohledů vidět najednou, nic se neořízne */
+  .seg.tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding: 0; overflow: visible; border-top: 1px solid var(--border); margin-top: var(--s-2); }
+  .seg.tabs button { min-height: 42px; padding: 0 4px; font-size: var(--fs-md); text-align: center; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .seg.tabs button:nth-child(3n) { border-right: 0; }
+  .seg.tabs button:nth-child(n+4) { border-bottom: 0; }
+  .seg.tabs button.on { background: var(--surface-2); }
+  .seg.tabs button::after { left: 0; right: 0; bottom: 0; height: 3px; }
+  .seg.tabs button:nth-child(n+4)::after { bottom: -1px; }
+}
+@media (max-width: 359px) { .seg.tabs button { font-size: var(--fs-sm); } .chips { grid-template-columns: 1fr 1fr; } }
 @media (pointer: coarse) {
   .chip, .presets button, .pchip { min-height: 36px; }
 }
@@ -868,7 +899,7 @@ function chipsHtml(){
   var bs=$('chips').querySelectorAll('.chip');
   for(var i=0;i<bs.length;i++)(function(b){b.onclick=function(){
     var sel=mode==='P'?$('player'):$('opp');sel.value=b.getAttribute('data-v');render();
-    try{$('tblTitle').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){try{$('tblTitle').scrollIntoView(true)}catch(e2){}}
+    try{$('tiles').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){try{$('tiles').scrollIntoView(true)}catch(e2){}}
   }})(bs[i]);
 }
 function applyPick(){
@@ -2666,7 +2697,7 @@ function renderZ(){
 function openPlayer(n){
   var kk=$('klub').value;if(kk&&KLUB[n]&&KLUB[n]!==kk)$('klub').value=KLUB[n];
   mode='P';markTabs();sortKey=null;refresh(n);
-  try{$('tblTitle').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}
+  try{$('tiles').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}
 }
 function plink(n){return '<a class="pl" data-p="'+escH(n)+'">'+escH(n)+'</a>'}
 function bindLinks(root){
