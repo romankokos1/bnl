@@ -1262,6 +1262,7 @@ function render(){
   });
   var maxB=Math.max.apply(null,data.map(function(d){return d.t.b}).concat([0]));
   var h='<table>'+headHtml(first)+'<tbody>'+data.map(function(d){return rowHtml(mode==='P'?teamCell(d.k):'<b>'+d.k+'</b>',d.t,'',maxB)}).join('')+(all?rowHtml('Celkem',all,'tot'):'')+'</tbody></table>';
+  if(!data.length)h='<p class="muted">Pro zvolené filtry nejsou žádné zápasy.</p>';
   out.innerHTML=h;
   var ths=out.querySelectorAll('th');
   for(var i=0;i<ths.length;i++)(function(th){th.onclick=function(){var k=th.getAttribute('data-k');if(!k)return;sortDir=sortKey===k?-sortDir:(k==='k'?1:-1);sortKey=k;render()}})(ths[i]);
@@ -3286,7 +3287,7 @@ function renderR(){
   b('rSw','onclick',function(){var t=ZS.A;ZS.A=ZS.B;ZS.B=t;renderR()});
   b('rK','onchange',function(){RS.postK=this.value;RS.postKey='';renderR()});
   b('rG','onchange',function(){RS.postKey=this.value;renderR()});
-  b('rP','onchange',function(){if(EMB[this.value]){RS.iv=this.value;renderR()}else this.value=RS.iv});
+  b('rP','onchange',function(){var v=this.value.trim();if(EMB[v]){RS.iv=v;renderR()}else{this.value=RS.iv;$('rMsg').textContent=v?'Hráč „'+v+'“ v datech není – zůstávají podklady k hráči '+RS.iv+'.':''}});
   b('rCopySel','onclick',function(){rCopy(rText(true),'Vybrané podklady zkopírovány.')});
   b('rCopyAll','onclick',function(){rCopy(rText(false),'Všechny podklady zkopírovány.')});
   b('rDl','onclick',function(){rDownload(rText(true))});
@@ -4212,11 +4213,14 @@ function ensure(kod){
     else if(L){Object.keys(L.hraci||{}).forEach(function(n){addPlayer(kod,n,L.hraci[n].map(expand),(L.idy||{})[n])})}
     if(L){Object.keys(L.brankari||{}).forEach(function(n){addGoalie(kod,n,L.brankari[n].map(expand),(L.idy||{})[n])})}
     var st=(L&&L.vygenerovano)||(M&&M.vygenerovano);if(st)STAMP[kod]=st;
-  });
+  }).catch(function(e){FAIL[kod]=1;console.warn('bilance: '+(e&&e.message||e));failNote()});
   return LOADED[kod];
 }
-var STAMP={};
+var STAMP={},FAIL={};
 function note(t){$('loadnote').textContent=t||''}
+function failNote(){var k=Object.keys(FAIL),el=$('failnote');
+  if(!el){el=document.createElement('p');el.id='failnote';el.className='small warn';el.setAttribute('role','alert');var u=$('updated').parentNode;u.parentNode.insertBefore(el,u.nextSibling)}
+  el.textContent=k.length?'Nepodařilo se načíst data: '+k.map(function(c){var x=CLUBS.filter(function(z){return z.kod===c})[0];return x?x.nazev:c}).join(', ')+'. Celoligové přehledy, pořadí a údaje o soupeři jsou proto neúplné.':'';el.hidden=!k.length}
 function loadClub(k){
   var list=k?[k]:CLUBS.map(function(c){return c.kod}),done=0,tot=list.length;
   var todo=list.filter(function(c){return !LOADED[c]});
