@@ -765,6 +765,96 @@ tr.pdet > td { padding: 0 !important; background: var(--surface-2) !important; w
 @media (pointer: coarse) {
   .chip, .presets button, .pchip { min-height: 36px; }
 }
+
+/* ---------- 17 · vizuální dokončení (UI fáze) ----------
+   Jedna vrstva nad základem: identita hlavičky, hierarchie výsledek > kontext > ovládání,
+   méně zaoblených krabic, zřetelné aktivní filtry. Struktura a chování beze změny. */
+:root { --mast: #172334; --mast-2: #22324A; --mast-fg: #FFFFFF; --mast-fg-2: rgba(255,255,255,.64); --r-3: 3px; --r-2: 3px; }
+:root[data-theme="dark"] { --mast: #0A0E13; --mast-2: #1A212B; --mast-fg: #E6E9EE; --mast-fg-2: rgba(230,233,238,.58); }
+
+/* hlavička: tmavý pruh jako u sportovních redakcí, oranžová jen jako tenká linka */
+.top { background: var(--mast); border-bottom: 3px solid var(--accent); }
+.top-in { padding-top: 14px; padding-bottom: 13px; }
+.top h1 { color: var(--mast-fg); font-size: 19px; font-weight: 700; letter-spacing: -.015em; }
+.top .updated, .top .updated a { color: var(--mast-fg-2); }
+.top .updated a { text-decoration-color: rgba(255,255,255,.28); }
+.top .updated a:hover { color: var(--mast-fg); text-decoration-color: var(--mast-fg-2); }
+.top .theme-btn { background: transparent; border-color: rgba(255,255,255,.22); color: var(--mast-fg-2); }
+.top .theme-btn:hover { background: var(--mast-2); color: var(--mast-fg); }
+.top #failnote { color: #F5B47F; margin: 6px 0 0; }
+
+/* navigace: aktivní sekce silněji, neaktivní tišeji */
+.nav { box-shadow: 0 1px 0 var(--border); border-bottom: 0; }
+.seg.tabs button { color: var(--text-2); font-weight: 500; }
+.seg.tabs button.on { color: var(--text); font-weight: 700; }
+.seg.tabs button.on::after { height: 3px; }
+
+/* karty: méně zaoblení, nadpis karty jako skutečný nadpis, popisek tiše vedle */
+.card { border-radius: var(--r-3); }
+.card h2 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.card h2 .fold-n { margin-left: 4px; font-size: var(--fs-sm); font-weight: 400; letter-spacing: 0; color: var(--text-3); }
+/* nadpis bloku uvnitř karty: o stupeň pod nadpisem karty, nad štítky skupin */
+h3.kh, #zcard h3 { font-size: 15px; font-weight: 700; letter-spacing: -.005em; }
+h3.kh .fold-n, #zcard h3 .fold-n { font-size: var(--fs-sm); font-weight: 500; color: var(--text-3); }
+
+/* Nejbližší zápasy: na širokém displeji dva sloupce, aby rozpis nevytlačil analýzu pod okraj */
+@media (min-width: 1100px) {
+  #nextcard:not(.fold) .fxl { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--s-8); }
+  #nextcard .fxr:nth-child(2) { border-top: 0; }
+  #nextcard .fxr:has(.fxp:not([hidden])) { grid-column: 1 / -1; }
+  #nextcard .fx { padding-top: 7px; padding-bottom: 7px; grid-template-columns: 172px 1fr 16px; }
+}
+
+/* ovládací panel: podřízený výsledkům – tónované pozadí, bez vlastní váhy */
+#ctl.card { background: var(--surface-2); }
+#ctl.card select, #ctl.card input[type=date], #ctl.card .presets button { background-color: var(--surface); }
+.filters label, .fgrid label, .zpick label, .mfil label, .sctl label { font-size: var(--fs-2xs); font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.filters label.gonebox, .mfil label.ochk, label.chk { font-size: var(--fs-sm); font-weight: 400; letter-spacing: 0; text-transform: none; }
+/* aktivní filtr je vidět na první pohled (výchozí volba má prázdnou hodnotu) */
+#season:not(:has(option[value=""]:checked)), #comp:not(:has(option[value=""]:checked)),
+#kFrom:not(:has(option[value=""]:checked)), #kTo:not(:has(option[value=""]:checked)),
+#club:not(:has(option[value=""]:checked)), #kde:not(:has(option[value=""]:checked)),
+#oO:not(:has(option[value=""]:checked)) {
+  border-color: var(--accent); background-color: var(--accent-soft); color: var(--text); font-weight: 600; }
+input[type=checkbox] { accent-color: var(--text); }
+
+/* tlačítka: neaktivní hlavní tlačítko nesmí vypadat jako šedý blok */
+button.btn:disabled { opacity: 1; background: var(--surface-2); border-color: var(--border); color: var(--text-3); }
+button.btn.sec:disabled { background: var(--surface); }
+
+/* souhrny čísel: hlavní údaje dominují, popisky ustupují */
+.sbn b { font-size: 26px; letter-spacing: -.02em; }
+.tile b { font-size: 26px; font-weight: 650; letter-spacing: -.02em; }
+.sbs .tile:nth-child(3) b { font-weight: 800; }
+.kstats { display: flex; flex-wrap: wrap; gap: var(--s-3) 0; margin: var(--s-2) 0 var(--s-4); }
+.kstats div { justify-content: flex-start; padding: 0 var(--s-6) 0 var(--s-4); border-left: 1px solid var(--border); }
+.kstats div:first-child { padding-left: 0; border-left: 0; }
+.kstats b { font-size: 24px; line-height: 1.1; font-weight: 650; letter-spacing: -.02em; }
+.kstats span { margin-top: 2px; font-size: var(--fs-2xs); letter-spacing: .06em; }
+
+/* sekundární a metodické texty: čitelné, ale zřetelně pod výsledky */
+#ocard > p.small.muted, #scard > p.small.muted, #zcard p.small.muted, #rcard > p.small.muted,
+#ocard .ofind + p.small.muted, #ocard h3.kh + p.muted.small + p.small.muted { color: var(--text-3); max-width: 110ch; }
+#ocard h3.kh + p.muted.small { color: var(--text-2); font-style: italic; }
+.pchip { border-color: var(--border); background: var(--surface); font-weight: 550; }
+.pchip:has(input:checked) { border-color: var(--text-3); }
+.pchip .muted { font-weight: 650; color: var(--text-2); }
+.octx { color: var(--text-2); }
+
+
+@media (max-width: 900px) {
+  .top-in { padding-top: 11px; padding-bottom: 10px; }
+  .top h1 { font-size: 16.5px; }
+  .top .updated { font-size: var(--fs-xs); line-height: 1.45; }
+  .tile b, .sbn b { font-size: 22px; }
+  .kstats b { font-size: 20px; }
+  .kstats div { padding-right: var(--s-4); padding-left: var(--s-3); }
+}
+@media (max-width: 600px) {
+  .kstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3) 0; }
+  .kstats div { padding: 0 var(--s-2) 0 var(--s-3); }
+  .kstats div:nth-child(3n+1) { padding-left: 0; border-left: 0; }
+}
 </style>
 </head>
 <body>
