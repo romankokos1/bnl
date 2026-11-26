@@ -855,6 +855,17 @@ button.btn.sec:disabled { background: var(--surface); }
   .kstats div { padding: 0 var(--s-2) 0 var(--s-3); }
   .kstats div:nth-child(3n+1) { padding-left: 0; border-left: 0; }
 }
+
+/* ---------- 18 · identifikace klubů ----------
+   Kroužek zůstává, ale je čitelnější: o 1 px větší a s linkou vně, takže bílá i tmavá půlka
+   drží tvar na světlém i tmavém pozadí. Zkratka má jednotný řez a v tabulkách stejnou šířku,
+   aby plné názvy a čísla stály v jedné ose. */
+:root { --dot-ring: rgba(23,35,52,.30); }
+:root[data-theme="dark"] { --dot-ring: rgba(255,255,255,.42); }
+.tdot, .chip[style*="--tg"]::before { width: 11px; height: 11px; box-shadow: 0 0 0 1px var(--dot-ring); vertical-align: -1.5px; margin-left: 1px; margin-right: 7px; }
+.chip[style*="--tg"]::before { margin-right: 0; }
+.tdot + b { font-weight: 700; letter-spacing: .035em; }
+td .tdot + b { display: inline-block; min-width: 2.6em; }
 </style>
 </head>
 <body>
@@ -1023,7 +1034,7 @@ function clubName(n){var k=KLUB[n];return TEAMS[k]||k||''}
 function INFR(n){var r=INF[n];if(!r){r=EMB[n].map(function(x){return Object.assign({},x)});inferTeams(r,KLUB[n]);INF[n]=r}return r}
 
 var TEAMS={SLA:'Slavia',VHK:'Vsetín',UNL:'Ústí nad Labem',CEB:'České Budějovice',KLA:'Kladno',VIT:'Vítkovice',LIB:'Liberec',PLZ:'Plzeň',KOM:'Kometa Brno',SPA:'Sparta',PCE:'Pardubice',LIT:'Litvínov',KVA:'Karlovy Vary',OLO:'Olomouc',MHK:'Hradec Králové',MBL:'Mladá Boleslav',TRI:'Třinec',ZLN:'Zlín',CHM:'Chomutov',JIH:'Jihlava',ZNO:'Znojmo'};
-var TEAMCOL={CEB:['#d4202b','#1f5fb4','#f2b705'],SPA:['#8c1230','#111827'],SLA:['#d4202b','#ffffff'],KOM:['#1f5fb4','#ffffff'],TRI:['#ffffff','#d4202b'],PCE:['#d4202b','#ffffff','#1f5fb4'],PLZ:['#ffffff','#1f5fb4'],LIB:['#1f9ad6','#ffffff'],VIT:['#1b3a7a','#ffffff'],MHK:['#f2b705','#d4202b','#ffffff'],KVA:['#8a93a3','#ffffff'],OLO:['#d4202b','#ffffff'],MBL:['#1f8a4c','#ffffff'],LIT:['#f2b705','#111827'],KLA:['#1f5fb4','#ffffff'],CHM:['#d4202b','#8a93a3'],ZLN:['#f2b705','#1f5fb4'],JIH:['#f2b705','#d4202b'],ZNO:['#d4202b','#ffffff','#7a4a2b'],VHK:['#1f8a4c','#f2b705'],UNL:['#1f5fb4','#f2b705']};
+var TEAMCOL={CEB:['#d4202b','#1f5fb4','#f2b705'],SPA:['#8c1230','#111827'],SLA:['#d4202b','#ffffff'],KOM:['#1f5fb4','#ffffff'],TRI:['#ffffff','#d4202b'],PCE:['#d4202b','#ffffff','#1f5fb4'],PLZ:['#ffffff','#1f5fb4'],LIB:['#1f9ad6','#ffffff'],VIT:['#1b3a7a','#ffffff'],MHK:['#111827','#d4202b','#ffffff'],KVA:['#111827','#ffffff'],OLO:['#d4202b','#ffffff'],MBL:['#1f8a4c','#ffffff'],LIT:['#f2b705','#111827'],KLA:['#14284b','#978000'],CHM:['#d4202b','#8a93a3'],ZLN:['#f2b705','#1f5fb4'],JIH:['#f2b705','#d4202b'],ZNO:['#d4202b','#ffffff','#7a4a2b'],VHK:['#1f8a4c','#f2b705'],UNL:['#1f5fb4','#f2b705']};
 function tcs(c){var a=TEAMCOL[c]||['#94a3b8'],g;
   if(a.length===1)g=a[0];else if(a.length===2)g='linear-gradient(135deg,'+a[0]+' 0 50%,'+a[1]+' 50% 100%)';
   else g='conic-gradient(from 45deg,'+a[0]+' 0 33.4%,'+a[1]+' 0 66.7%,'+a[2]+' 0)';
